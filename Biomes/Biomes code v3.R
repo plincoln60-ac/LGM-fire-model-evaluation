@@ -11,6 +11,26 @@ BiomeLGM <-read.csv('/Volumes/PL SSD/Biome 6000/Biome 6000 LGM.csv')
 BiomeLGM <- BiomeLGM[c(2:4,8)]
 colnames(BiomeLGM)<- c('sitename', 'lat', 'lon', 'biome')
 
+
+head(BiomeLGM)
+unique(BiomeLGM$biome)
+BiomeLGM$biomesimple <- 'NA'
+
+
+BiomeLGM <-BiomeLGM %>%
+  dplyr::rowwise() %>% # this is key, so the operations are applied by row and not column
+  dplyr::mutate(biomesimple = dplyr::case_when(
+    biome =='boreal forest' ~ "forest",
+    biome =='temperate forest' ~ "forest",
+    biome =='tropical forest' ~ "forest",
+    biome =='warm-temperate forest' ~ "forest",
+    biome =='grassland and dry shrubland' ~ "grassland",
+    biome =='savanna and dry woodland' ~ "savanna",
+    biome =='tundra' ~ "grassland",
+  ))
+
+
+str(BiomeLGM)
 ####SPITFIRE£#####----
 SPITFIREBA <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SPITFIRE/LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970.nc")
 SPITFIRELCF <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SPITFIRE/SPITFIRE_LCF_1951_1970.nc")
@@ -101,7 +121,7 @@ world <-rnaturalearth:: ne_countries(scale = "medium", returnclass = "sf")
 class(world)
 world <- map_data("world")
 biome6kcol <- c('polar desert/ice'='light blue',
-                'boreal forest' = 'green4',
+                'forest' = 'green4',
                 "desert" = 'yellow',
                 'forest' = 'green',
                 'tropical forest' = 'palegreen4',
@@ -180,7 +200,7 @@ colnames(regression_SPITFIRELGM)<-c ("vegtype","slope","intercept","R2","R2.Adj"
 regression_SPITFIRE<-plyr::ddply(SPITFIRE,"vegtype",regression)
 colnames(regression_SPITFIRE)<-c ("vegtype","slope","intercept","R2","R2.Adj")
 
-
+head(SPITFIRELGM)
 
 
 ##Mapplot
