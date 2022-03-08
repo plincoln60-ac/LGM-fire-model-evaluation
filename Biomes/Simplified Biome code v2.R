@@ -5,6 +5,12 @@ library(ggplot2)
 library(dplyr)
 library(geosphere)
 library(ggpubr)
+library(raster)
+library(sp)
+library(rgdal)
+library(maptools)
+library(rgeos)
+
 ########################################################################################################################
 #######################################Biome 6k data####################################################################----
 ########################################################################################################################
@@ -44,6 +50,14 @@ BiomePD <-BiomePD %>%
     biome =='tundra' ~ "grassland and shrubland",
     biome =='desert' ~ "desert",
   ))
+
+world <-rnaturalearth:: ne_countries(scale = "medium", returnclass = "sf")
+class(world)
+world <- map_data("world")
+biome6kcol <- c("desert" = 'yellow',
+                'forest' = 'green4',
+                'grassland and shrubland' ='yellow4')
+
 
 ########################################################################################################################
 ########################################################SPITFIRE########################################################----
@@ -125,30 +139,54 @@ SPITFIRELGM1 <- SPITFIRELGM %>%
   )) %>%
   dplyr::ungroup() # Removes the 'rowwise' property from the table
 
+SPITFIRELGM1$biomes <- as.vector(SPITFIRELGM1$biomes)
 #check numbers
 table(SPITFIRELGM1$biomes)
 table(SPITFIRE1$biomes)
 
-#####Plot data ----
-world <-rnaturalearth:: ne_countries(scale = "medium", returnclass = "sf")
-class(world)
-world <- map_data("world")
-biome6kcol <- c("desert" = 'yellow',
-                'forest' = 'green4',
-                'grassland and shrubland' ='yellow4')
+#Raster values to point
+# extract circular, 20m buffer
+set.seed(0)
+SPITFIRELGMrat <-SPITFIRELGM1[,c(2,1,26)] #subset biome
+SPITFIRELGMrat$biomes <- factor(SPITFIRELGMrat$biomes) #make biome a factor
+SPITFIRELGMrat$ibiomes = as.numeric(SPITFIRELGMrat$biomes) #make a numeric index column of the factor
+SPITFIRELGMrast <-rasterFromXYZ(SPITFIRELGMrat[,c('lon', 'lat','ibiomes')])
+SPITFIRELGMrast <-ratify(SPITFIRELGMrast)
 
-controlBiome <-ggplot(SPITFIRE1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('Control Biomes') + geom_point(data = BiomePD, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_manual(values = biome6kcol) 
-LGMBiome <-ggplot(SPITFIRELGM1, aes(x=lon, y=lat)) + geom_tile(data = SPITFIRELGM1, aes(fill = biomes), alpha = 0.5) + ggtitle('LGM Biomes') + geom_point(data = BiomeLGM, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21)+  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80)) + scale_fill_manual(values = biome6kcol)  + scale_color_manual(values = biome6kcol, guide = FALSE)         
+ r <- data.frame(raster::extract(SPITFIRELGMrast,             # raster layer
+                            BiomeLGM[,3:2],   # SPDF with centroids for buffer
+                            CRS= 
+                            buffer = 20,     # buffer size, units depend on CRS
+                            df=TRUE) )        # return a dataframe? 
+colnames(r) <- c('ID', 'SPIT')
+BiomeLGM2<-cbind(BiomeLGM, r)
+??raster::extract
+BiomeLGM2 <- BiomeLGM2 %>%
+  dplyr::rowwise() %>% # this is key, so the operations are applied by row and not column
+  dplyr::mutate(SPIT = dplyr::case_when(
+   `SPIT`== 1  ~ "desert",
+   `SPIT`==  2 ~ "forest",
+   `SPIT`== 3~ "grassland and shrubland",
+    TRUE ~ NA_character_ # This is the default category
+  )) %>%
+  dplyr::ungroup() # Removes the 'rowwise' property from the table
+
+
+
+#####Plot data ----
+
+controlBiome <-ggplot(SPITFIRE1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('Control Biomes') + geom_point(data = BiomePD, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, alpha = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_manual(values = biome6kcol) 
+LGMBiome <-ggplot(SPITFIRELGM1, aes(x=lon, y=lat)) + geom_tile(data = SPITFIRELGM1, aes(fill = biomes), alpha = 0.5) + ggtitle('LGM Biomes') + geom_point(data = BiomeLGM, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21,  alpha = 0.75)+  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80)) + scale_fill_manual(values = biome6kcol)  + scale_color_manual(values = biome6kcol, guide = FALSE)         
 
 # BA rasters
 controlBA <-ggplot(SPITFIREBA, aes(x=lon, y=lat, fill = BA)) + geom_tile(alpha = 0.5) + ggtitle('Control Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
 LGMBA <-ggplot(SPITFIRELGMBA, aes(x=lon, y=lat, fill = BA)) + geom_tile(alpha = 0.5) + ggtitle('LGM Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
 #multiplot ----
-SPITFIREplot <- ggarrange(controlBiome,controlBA, LGMBiome, LGMBA, 
-          labels = c("A", "B", "C", "D"),
-          ncol = 2, nrow = 2, common.legend = TRUE, legend="bottom")
-annotate_figure(plot, top = text_grob("LPJ-GUESS-SPITFIRE", 
-                                      color = "black", face = "bold", size = 18))
+SPITFIREplot <- ggarrange(controlBiome, LGMBiome,
+          labels = c("A", "B"), common.legend = T,
+          nrow = 2,   legend="bottom")
+SPITFIREplot<-annotate_figure(SPITFIREplot, top = text_grob("LPJ-GUESS-SPITFIRE", 
+                                      color = "black", face = "bold", size =18))
 
 
 ########################################################################################################################
@@ -234,21 +272,20 @@ table(SIMFIRE1$biomes)
 #####Plot data ----
 
 controlBiome <-ggplot(SIMFIRE1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('Control Biomes') + geom_point(data = BiomePD, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, size = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_manual(values = biome6kcol) 
-LGMBiome <-ggplot(SIMFIRELGM1, aes(x=lon, y=lat)) + geom_tile(data = SPITFIRELGM1, aes(fill = biomes), alpha = 0.5) + ggtitle('LGM Biomes') + geom_point(data = BiomeLGM, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21)+  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80)) + scale_fill_manual(values = biome6kcol)  + scale_color_manual(values = biome6kcol, guide = FALSE)         
+LGMBiome <-ggplot(SIMFIRELGM1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) + ggtitle('LGM Biomes') + geom_point(data = BiomeLGM, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21)+  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80)) + scale_fill_manual(values = biome6kcol)  + scale_color_manual(values = biome6kcol, guide = FALSE)         
 
 
 # BA rasters
 controlBA <-ggplot(SIMFIREBA, aes(x=lon, y=lat, fill = BA.)) + geom_tile(alpha = 0.5) + ggtitle('Control Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
 LGMBA <-ggplot(SIMFIRELGMBA, aes(x=lon, y=lat, fill = burntArea.monthly)) + geom_tile(alpha = 0.5) + ggtitle('LGM Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
 #multiplot ----
-SIMFIREplot <- ggarrange(controlBiome,controlBA, LGMBiome, LGMBA, 
-                  labels = c("A", "B", "C", "D"),
-                  ncol = 2, nrow = 2, common.legend = TRUE, legend="bottom")
-annotate_figure(plot2, top = text_grob("SIMFIRE-BLAZE", 
+SIMFIREplot <- ggarrange(controlBiome, LGMBiome,
+                         labels = c("A", "B"), common.legend = T,
+                         ncol = 2,   legend="bottom")
+SIMFIREplot <-annotate_figure(SIMFIREplot, top = text_grob("SIMFIRE-BLAZE", 
                                       color = "black", face = "bold", size = 18))
 
-??ggarrange
-
+SIMFIREplot
 ########################################################################################################################
 ########################################################ORCHIDEE########################################################----
 ########################################################################################################################
@@ -337,14 +374,14 @@ controlBA <-ggplot(ORCHIDEEBA, aes(x=longitude, y=latitude, fill = burntArea)) +
 LGMBA <-ggplot(ORCHIDEELGMBA, aes(x=lon, y=lat, fill = BA)) + geom_tile(alpha = 0.5) + ggtitle('LGM Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
 
 #multiplot ----
-ORCHIDEEplot <- ggarrange(controlBiome,controlBA, LGMBiome, LGMBA, 
-                   labels = c("A", "B", "C", "D"),
-                   ncol = 2, nrow = 2, common.legend = TRUE, legend="bottom")
-annotate_figure(ORCHIDEEplot, top = text_grob("ORCHIDEE", 
+ORCHIDEEplot <- ggarrange(controlBiome, LGMBiome,
+                          labels = c("A", "B"), common.legend = T,
+                          ncol = 2,   legend="bottom")
+ORCHIDEEplot <-annotate_figure(ORCHIDEEplot, top = text_grob("ORCHIDEE", 
                                        color = "black", face = "bold", size = 18))
 
 
-
+ORCHIDEEplot
 
 ########################################################################################################################
 ########################################################LPJLM########################################################----
@@ -432,14 +469,14 @@ LGMBiome <-ggplot(LPJLMLGM1, aes(x=lon, y=lat)) + geom_tile(data = LPJLMLGM1, ae
 controlBiome
 
 # BA rasters
-controlBA <-ggplot(LPJLMBA, aes(x=lon, y=lat, fill = burntArea)) + geom_tile(alpha = 0.5) + ggtitle('Control Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
-LGMBA <-ggplot(LPJLMLGMBA, aes(x=lon, y=lat, fill = BA)) + geom_tile(alpha = 0.5) + ggtitle('LGM Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
+controlBA <-ggplot(LPJLMBA, aes(x=lon, y=lat, fill = burnedf)) + geom_tile(alpha = 0.5) + ggtitle('Control Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
+LGMBA <-ggplot(LPJLMLGMBA, aes(x=lon, y=lat, fill = burnedf)) + geom_tile(alpha = 0.5) + ggtitle('LGM Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
 
 #multiplot ----
 LPJLMplot <- ggarrange(controlBiome,controlBA, LGMBiome, LGMBA, 
                    labels = c("A", "B", "C", "D"),
                    ncol = 2, nrow = 2, common.legend = TRUE, legend="bottom")
-annotate_figure(LPJLMplot, top = text_grob("LPJLM", 
+LPJLMplot <-annotate_figure(LPJLMplot, top = text_grob("LPJLM", 
                                        color = "black", face = "bold", size = 18))
 
 
@@ -451,10 +488,23 @@ annotate_figure(LPJLMplot, top = text_grob("LPJLM",
 
 
 plot2 <- ggarrange(SPITFIREplot,SIMFIREplot, ORCHIDEEplot, LPJLMplot, 
-                   ncol = 2, nrow = 2, common.legend = TRUE, legend="bottom")
+                   ncol = 2, nrow = 2, common.legend= T)
 annotate_figure(plot2, top = text_grob("Multimodel comparison", 
-                                       color = "black", face = "bold", size = 18))
+                                      color = "black", face = "bold", size = 18))
 
+
+########################################################################################################################
+########################################################Regional plots########################################################----
+########################################################################################################################
+####SouthAmerica
+SPITctrl <-ggplot(SPITFIRE1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('Control Biomes') + geom_point(data = BiomePD, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, alpha = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr() +  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+ scale_fill_manual(values = biome6kcol) 
+SPITLGM <-ggplot(SPITFIRELGM1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('LGM Biomes') + geom_point(data = BiomeLGM, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, alpha = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr() +  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+ scale_fill_manual(values = biome6kcol) 
+SIMctrl <-ggplot(SIMFIRE1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('Control Biomes') + geom_point(data = BiomePD, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, alpha = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr() +  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+ scale_fill_manual(values = biome6kcol) 
+SIMLGM <-ggplot(SIMFIRELGM1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('LGM Biomes') + geom_point(data = BiomeLGM, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, alpha = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr() +  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+ scale_fill_manual(values = biome6kcol) 
+ORCctrl <-ggplot(ORCHIDEE1, aes(x=longitude, y=latitude, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('Control Biomes') + geom_point(data = BiomePD, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, alpha = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr() +  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+ scale_fill_manual(values = biome6kcol) 
+ORCLGM <-ggplot(ORCHIDEELGM1, aes(x=longitude, y=latitude, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('LGM Biomes') + geom_point(data = BiomeLGM, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, alpha = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr() +  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+ scale_fill_manual(values = biome6kcol) 
+LPJLMctrl <-ggplot(LPJLM1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('Control Biomes') + geom_point(data = BiomePD, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, alpha = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr() +  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+ scale_fill_manual(values = biome6kcol) 
+LPJLMLGM <-ggplot(LPJLMLGM1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('LGM Biomes') + geom_point(data = BiomeLGM, aes(x= lon, y=lat,fill = biomesimple), colour="black",pch=21, alpha = 0.75)+ geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr() +  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+ scale_fill_manual(values = biome6kcol) 
 
 
 
