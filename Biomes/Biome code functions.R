@@ -10,6 +10,7 @@ library(sp)
 library(rgdal)
 library(maptools)
 library(rgeos)
+library(ggnewscale)
 
 ########################################################################################################################
 #######################################Upload Biome 6k data#############################################################----
@@ -23,8 +24,6 @@ BiomePD <-read.csv('/Volumes/PL SSD/Biome 6000/Biome 6000 PD.csv')
 BiomePD <- BiomePD[c(2:4,8)]
 colnames(BiomePD)<- c('sitename', 'lat', 'lon', 'biome')
 
-BiomeLGM$biomesimple <- 'NA'
-
 #simplify biome categorisation
 BiomeLGM <-BiomeLGM %>%
   dplyr::rowwise() %>% # this is key, so the operations are applied by row and not column
@@ -36,7 +35,7 @@ BiomeLGM <-BiomeLGM %>%
     biome =='grassland and dry shrubland' ~ "grassland and shrubland",
     biome =='savanna and dry woodland' ~ "grassland and shrubland",
     biome =='tundra' ~ "grassland and shrubland",
-    biome =='desert' ~ "desert",
+    biome =='desert' ~ "bare ground",
   ))
 BiomePD <-BiomePD %>%
   dplyr::rowwise() %>% # this is key, so the operations are applied by row and not column
@@ -48,23 +47,23 @@ BiomePD <-BiomePD %>%
     biome =='grassland and dry shrubland' ~ "grassland and shrubland",
     biome =='savanna and dry woodland' ~ "grassland and shrubland",
     biome =='tundra' ~ "grassland and shrubland",
-    biome =='desert' ~ "desert",
+    biome =='desert' ~ "bare ground",
   ))
 
 world <-rnaturalearth:: ne_countries(scale = "medium", returnclass = "sf")
 class(world)
 world <- map_data("world")
-biome6kcol <- c("desert" = 'yellow',
+biome6kcol <- c("bare ground" = 'yellow',
                 'forest' = 'green4',
-                'grassland and shrubland' ='yellow4')
-
-
+                'grassland and shrubland' ='yellow4',
+                'TRUE' = "green", 'FALSE' = 'red', 'NEIGHBOURING' = 'orange')
 
 ########################################################################################################################
 ####################################Upload & reformat data into biomes##################################################----
 ########################################################################################################################
 
 ##create upload function
+
 
 SPITLCFfunction <- function(df){
   df <- df %>% tidync::hyper_tibble(force = T)
@@ -84,7 +83,7 @@ SPITLCFfunction <- function(df){
   df$biomes <- 0
   df <- df %>%
     dplyr::mutate(biomes = dplyr::case_when(
-      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "desert",
+      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "bare ground",
       sum(`totveg`, na.rm = TRUE) >= 0.1  & `grassland` < `trees`~ "forest", 
       sum(`totveg`, na.rm = TRUE) >= 0.1  & `trees` < `grassland`~ "grassland and shrubland")
     )
@@ -110,7 +109,32 @@ SIMLCFfunction <- function(df){
   df$biomes <- 0
   df <- df %>%
     dplyr::mutate(biomes = dplyr::case_when(
-      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "desert",
+      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "bare ground",
+      sum(`totveg`, na.rm = TRUE) >= 0.1  & `grassland` < `trees`~ "forest", 
+      sum(`totveg`, na.rm = TRUE) >= 0.1  & `trees` < `grassland`~ "grassland and shrubland")
+    )
+  df <- df[c(1:2,14:21)]
+  return(df)
+}
+SIMLGMLCFfunction <- function(df){
+  df <- df %>% tidync::hyper_tibble(force = T)
+  df <- df[1:4]
+  colnames(df)<- c('landCoverFrac', 'vegtype', 'lon', 'lat')
+  df <- df %>% pivot_wider(names_from = "vegtype", values_from = "landCoverFrac")
+  df<-df %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      totveg = sum(c_across(`1`:`11`)),
+      bare = 1-totveg,
+      tropical = sum(`7`, `8`,`9`, na.rm = TRUE),
+      boreal = sum(`1`, `2`,`3`, na.rm = TRUE),
+      temperate = sum(`4`,`5`,`6`, na.rm = TRUE),
+      grassland = sum(`10`,`11`, na.rm = TRUE),
+      trees = sum(`tropical`:`boreal`, `temperate`, na.rm = TRUE))
+  df$biomes <- 0
+  df <- df %>%
+    dplyr::mutate(biomes = dplyr::case_when(
+      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "bare ground",
       sum(`totveg`, na.rm = TRUE) >= 0.1  & `grassland` < `trees`~ "forest", 
       sum(`totveg`, na.rm = TRUE) >= 0.1  & `trees` < `grassland`~ "grassland and shrubland")
     )
@@ -135,13 +159,40 @@ ORCLCFfunction <- function(df){
   df$biomes <- 0
   df <- df %>%
     dplyr::mutate(biomes = dplyr::case_when(
-      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "desert",
+      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "bare ground",
       sum(`totveg`, na.rm = TRUE) >= 0.1  & `grassland` < `trees`~ "forest", 
       sum(`totveg`, na.rm = TRUE) >= 0.1  & `trees` < `grassland`~ "grassland and shrubland")
     )
   df <- df[c(1:2,14:21)]
   return(df)
 }
+ORCLCFLGMfunction <- function(df){
+  df <- df %>% tidync::hyper_tibble(force = T)
+  df <- df[1:4]
+  colnames(df)<- c('landCoverFrac', 'lon', 'lat', 'vegtype')
+  df <- df %>% pivot_wider(names_from = "vegtype", values_from = "landCoverFrac")
+  df <- df[1:13]
+  df<-df %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      totveg = sum(c_across(`2`:`11`)),
+      bare = sum(`1`),
+      tropical = sum(`2`, `3`, na.rm = TRUE),
+      boreal = sum(`7`, `8`,`9`, na.rm = TRUE),
+      temperate = sum(`4`,`5`,`6`, na.rm = TRUE),
+      grassland = sum(`10`,`11`, na.rm = TRUE),
+      trees = sum(`tropical`:`boreal`, `temperate`, na.rm = TRUE))
+  df$biomes <- 0
+  df <- df %>%
+    dplyr::mutate(biomes = dplyr::case_when(
+      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "bare ground",
+      sum(`totveg`, na.rm = TRUE) >= 0.1  & `grassland` < `trees`~ "forest", 
+      sum(`totveg`, na.rm = TRUE) >= 0.1  & `trees` < `grassland`~ "grassland and shrubland")
+    )
+  df <- df[c(1:2,14:21)]
+  return(df)
+}
+
 LPJLMLCFfunction <- function(df){
   df <- df %>% tidync::hyper_tibble(force = T)
   df <- df[1:4]
@@ -160,7 +211,7 @@ LPJLMLCFfunction <- function(df){
   df$biomes <- 0
   df <- df %>%
     dplyr::mutate(biomes = dplyr::case_when(
-      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "desert",
+      sum(`totveg`, na.rm = TRUE) <= 0.1  & `biomes` == 0~ "bare ground",
       sum(`totveg`, na.rm = TRUE) >= 0.1  & `grassland` < `trees`~ "forest", 
       sum(`totveg`, na.rm = TRUE) >= 0.1  & `trees` < `grassland`~ "grassland and shrubland")
     )
@@ -181,128 +232,286 @@ LPJLMLGMLCF <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM pape
 SPITFIRELCF <-SPITLCFfunction(SPITFIRELCF)
 SPITFIRELGMLCF<-SPITLCFfunction(SPITFIRELGMLCF)
 SIMFIRELCF <- SIMLCFfunction(SIMFIRELCF)
-SIMFIRELGMLCF <-SIMLCFfunction(SIMFIRELGMLCF)
+SIMFIRELGMLCF <-SIMLGMLCFfunction(SIMFIRELGMLCF)
 ORCHIDEELCF <- ORCLCFfunction(ORCHIDEELCF)
-ORCHIDEELGMLCF <- ORCLCFfunction(ORCHIDEELGMLCF)
+ORCHIDEELGMLCF <- ORCLCFLGMfunction(ORCHIDEELGMLCF)
+LPJLMLCF <- LPJLMLCFfunction(LPJLMLCF)
 LPJLMLGMLCF <- LPJLMLCFfunction(LPJLMLGMLCF)
-
 
 #######################
 
-
 #Raster values to point
-SPIT <- raster("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SPITFIRE/SPITFIRE_LCF_1951_1970.nc")
-SPITLGM <- raster("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SPITFIRE/SPITFIRE_LGM_LCF.nc")
-SIMLCF <- raster("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SIMFIRE/SIMFIRE_LCF.nc")
-SIMLGM <- raster("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SIMFIRE/SIMFIRE_LGM_LCF.nc")
-ORC <- raster("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/ORCHIDEE/SF2_LCF_1951_1970.nc")
-ORCLGM <- raster("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/ORCHIDEE/ORCHIDEE_LGM_LCF.nc")
-LPJLM <- raster("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/LPJLM/LPJLM_LCF_1951_1970.nc")
-LPJLMLGM <- raster("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/LPJLM/LPJLM_LGM_landcoverfrac_90yr.nc")
-str(ORC)
-# extract circular, 20m buffer
-set.seed(0)
-df2 <-SPITFIRELCF[,c(2,1,10)] #subset biome
-df2$biomes <- factor(df2$biomes) #make biome a factor
-df2$ibiomes = as.numeric(df2$biomes) #make a numeric index column of the factor
-rast <-rasterFromXYZ(df2[,c('lon', 'lat','ibiomes')])
-rast <-ratify(rast)
-crs(rast) <- "+proj=longlat +datum=WGS84 +no_defs" 
-crs(LGM_centroid)<- "+proj=longlat +datum=WGS84 +no_defs" 
 
-crs(LGM_centroid)<- "+proj=utm +datum=WGS84" 
-crs(rast) <- "+proj=utm +datum=WGS84" 
+# extract circular, buffer----
+#loop vectors
+#loop vectors
+listLGM.dfs<- list(SPITFIRELGMLCF, SIMFIRELGMLCF, ORCHIDEELGMLCF, LPJLMLGMLCF)
+list.dfs<- list(SPITFIRELCF, SIMFIRELCF, ORCHIDEELCF, LPJLMLCF)
 
-r <- data.frame(raster::extract(rast,             # raster layer
-                                LGM_centroid,   # SPDF with centroids for buffer
-                                buffer = 2,  # buffer size, units depend on CRS
-                                # buffer size, units depend on CRS
-                           df=T  ))
-for (i in 10:15) {
-  hist(r[[i]], main=(paste("plot",i)))
+#sp points of entities
+Sras <- raster("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SPITFIRE/SPITFIRE_LCF_1951_1970.nc")
+#Set up spatial points of entities
+centroid <- SpatialPointsDataFrame(BiomeLGM[,3:2], proj4string=Sras@crs, BiomeLGM)
+centroid_PD <- SpatialPointsDataFrame(BiomePD[,3:2], proj4string=Sras@crs, BiomePD)
+
+
+##loop to extract biome values to points (with buffer) 
+#LGM
+for(i in 1:length(listLGM.dfs)) {
+  mod <- c('SPITFIRE', 'SIMFIRE', 'ORCHIDEE', 'LPJLM')
+  c_centre <- paste(mod[i], '_centre', sep="")#write new columns to biome data frame
+  c_buffer <- paste(mod[i], '_buffer', sep="")
+  BiomeLGM[[c_centre]] <- as.character('NA')
+  BiomeLGM[[c_buffer]] <- as.character('NA')
+  df2 <- as.data.frame(list.dfs[i])
+  df2 <-df2[,c(2,1,10)] #subset biome
+  df2$biomes <- factor(df2$biomes) #make biome a factor
+  df2$ibiomes = as.numeric(df2$biomes) #make a numeric index column of the factor
+  rast <-rasterFromXYZ(df2[,c('lon', 'lat','ibiomes')])
+  rast <-ratify(rast)
+  crs(rast) <- crs(Sras)
+  df2<-df2 %>%                          #make biome a numeric value & convert to raster for extracting
+    dplyr::rowwise() %>%
+    dplyr::mutate(ibiomes = dplyr:: case_when(
+      biomes == 'forest' ~1,
+      biomes == 'grassland and shrubland' ~2,
+      biomes == 'bare ground' ~3)
+    )
+  crs(centroid)<- "+proj=utm +zone=10 +datum=WGS84"  #change crs to utm (i.e. m). Suggested as a mechanism to include buffers
+  crs(rast) <- "+proj=utm +zone=10 +datum=WGS84" #change crs to utm (i.e. m). Suggested as a mechanism to include buffers
+  
+  r<-  raster::extract(rast,             # raster layer
+                       centroid) #
+  r<-replace(r, r==1, 'forest')
+  r<-replace(r, r==2, 'grassland and shrubland')
+  r<-replace(r, r==3, 'bare ground')
+  BiomeLGM[[c_centre]] <- cbind(r)
+  
+  rbuff <- raster::extract(rast,     # raster layer
+                           centroid, # SPDF with centroids for buffer
+                           buffer = 1)
+  jlen <- length(rbuff)
+  colu <-which(colnames(BiomeLGM)==c_buffer )
+  for (j in 1:jlen){
+    rbuff2 <- unique(as.numeric(unlist(rbuff[j])))
+    rbuff2<-replace(rbuff2, rbuff2==1, 'forest')
+    rbuff2<-replace(rbuff2, rbuff2==2, 'grassland and shrubland')
+    rbuff2<-replace(rbuff2, rbuff2==3, 'bare ground')
+    rbuff2 <- toString(rbuff2, sep = ",") #convert different biome types to single character string
+    BiomeLGM[j,colu] <-as.character(rbuff2, stringAsFactor = F)             #write values to dataframe (note this will only write values to the final column, could probably be improved)
+  }
+  crs(centroid)<- crs(Sras)#change crs back to lat long 
+  crs(rast) <- crs(Sras) #change crs back to lat long 
+}
+#PD
+for(i in 1:length(list.dfs)) {
+  mod <- c('SPITFIRE', 'SIMFIRE', 'ORCHIDEE', 'LPJLM')
+  c_centre <- paste(mod[i], '_centre', sep="")#write new columns to biome data frame
+  c_buffer <- paste(mod[i], '_buffer', sep="")
+  BiomePD[[c_centre]] <- as.character('NA')
+  BiomePD[[c_buffer]] <- as.character('NA')
+  df2 <- as.data.frame(list.dfs[i])
+  df2 <-df2[,c(2,1,10)] #subset biome
+  df2$biomes <- factor(df2$biomes) #make biome a factor
+  df2$ibiomes = as.numeric(df2$biomes) #make a numeric index column of the factor
+  rast <-rasterFromXYZ(df2[,c('lon', 'lat','ibiomes')])
+  rast <-ratify(rast)
+  crs(rast) <- crs(Sras)
+  df2<-df2 %>%                          #make biome a numeric value & convert to raster for extracting
+    dplyr::rowwise() %>%
+    dplyr::mutate(ibiomes = dplyr:: case_when(
+      biomes == 'forest' ~1,
+      biomes == 'grassland and shrubland' ~2,
+      biomes == 'bare ground' ~3)
+    )
+  crs(centroid_PD)<- "+proj=utm +zone=10 +datum=WGS84"  #change crs to utm (i.e. m). Suggested as a mechanism to include buffers
+  crs(rast) <- "+proj=utm +zone=10 +datum=WGS84" #change crs to utm (i.e. m). Suggested as a mechanism to include buffers
+  
+  r<-  raster::extract(rast,             # raster layer
+                       centroid_PD) #
+  r<-replace(r, r==1, 'forest')
+  r<-replace(r, r==2, 'grassland and shrubland')
+  r<-replace(r, r==3, 'bare ground')
+  BiomePD[[c_centre]] <- cbind(r)
+  
+  rbuff <- raster::extract(rast,     # raster layer
+                           centroid_PD, # SPDF with centroids for buffer
+                           buffer = 1)
+  jlen <- length(rbuff)
+  colu <-which(colnames(BiomePD)==c_buffer )
+  for (j in 1:jlen){
+    rbuff2 <- unique(as.numeric(unlist(rbuff[j])))
+    rbuff2<-replace(rbuff2, rbuff2==1, 'forest')
+    rbuff2<-replace(rbuff2, rbuff2==2, 'grassland and shrubland')
+    rbuff2<-replace(rbuff2, rbuff2==3, 'bare ground')
+    rbuff2 <- toString(rbuff2, sep = ",") #convert different biome types to single character string
+    BiomePD[j,colu] <-as.character(rbuff2, stringAsFactor = F)             #write values to dataframe (note this will only write values to the final column, could probably be improved)
+  }
+  crs(centroid_PD)<- crs(Sras)#change crs back to lat long 
+  crs(rast) <- crs(Sras) #change crs back to lat long 
 }
 
-head(r)
-??raster :: extract
-crs(LGM_centroid)<- "+proj=longlat +datum=WGS84 +no_defs" 
-crs(rast) <- "+proj=longlat +datum=WGS84 +no_defs" 
-
-crs(rast) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0" 
-
-print(r)
-
-cent_heightList <- raster::extract(rast,LGM_centroid,buffer = 20)
-BiomeLGM$ID <- 1:291
-LGM_centroid <- SpatialPointsDataFrame(
-  BiomeLGM[,3:2], proj4string=rast@crs, BiomeLGM)
-
-radius <- 4
-yPlus <- BiomeLGM$lat+radius
-xPlus <- BiomeLGM$lon+radius
-yMinus <- BiomeLGM$lat-radius
-xMinus <- BiomeLGM$lon-radius
-square=cbind(xMinus,yPlus,  # NW corner
-             xPlus, yPlus,  # NE corner
-             xPlus,yMinus,  # SE corner
-             xMinus,yMinus, # SW corner
-             xMinus,yPlus)  # NW corner again - close ploygon
-
-
-polys <- SpatialPolygons(mapply(function(poly, id) {
-  xy <- matrix(poly, ncol=2, byrow=TRUE)
-  Polygons(list(Polygon(xy)), ID=id)
-}, 
-split(square, row(square)), ID),
-proj4string=CRS(as.character("+proj=utm +zone=11 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")))
 
 
 
+ BiomeLGM2 <- BiomeLGM %>%
+   dplyr::mutate(SPITFIRE = dplyr::case_when(
+     SPITFIRE_centre == biomesimple ~'TRUE',
+     SPITFIRE_centre != biomesimple ~'FALSE',
+     SPITFIRE_buffer %>% stringr::str_detect(biomesimple) ~ 'NEIGHBOURING'
+   )) %>%
+   dplyr::mutate(SIMFIRE = dplyr::case_when(
+     SIMFIRE_centre == biomesimple ~'TRUE',
+     SIMFIRE_centre != biomesimple ~'FALSE',
+     SIMFIRE_buffer %>% stringr::str_detect(biomesimple) ~ 'NEIGHBOURING'
+   )) %>%
+   dplyr::mutate(ORCHIDEE = dplyr::case_when(
+     ORCHIDEE_centre == biomesimple ~'TRUE',
+     ORCHIDEE_centre != biomesimple ~'FALSE',
+     ORCHIDEE_buffer %>% stringr::str_detect(biomesimple) ~ 'NEIGHBOURING'
+   )) %>%
+   dplyr::mutate(LPJLM = dplyr::case_when(
+     LPJLM_centre == biomesimple ~'TRUE',
+     LPJLM_centre != biomesimple ~'FALSE',
+     LPJLM_buffer %>% stringr::str_detect(biomesimple) ~ 'NEIGHBOURING'
+   ))
+ BiomeLGM2 <- BiomeLGM2[c(1:3,5,14:17)]
+ 
+ BiomePD2 <- BiomePD %>%
+   dplyr::mutate(SPITFIRE = dplyr::case_when(
+     SPITFIRE_centre == biomesimple ~'TRUE',
+     SPITFIRE_centre != biomesimple ~'FALSE',
+     SPITFIRE_buffer %>% stringr::str_detect(biomesimple) ~ 'NEIGHBOURING'
+   )) %>%
+   dplyr::mutate(SIMFIRE = dplyr::case_when(
+     SIMFIRE_centre == biomesimple ~'TRUE',
+     SIMFIRE_centre != biomesimple ~'FALSE',
+     SIMFIRE_buffer %>% stringr::str_detect(biomesimple) ~ 'NEIGHBOURING'
+   )) %>%
+   dplyr::mutate(ORCHIDEE = dplyr::case_when(
+     ORCHIDEE_centre == biomesimple ~'TRUE',
+     ORCHIDEE_centre != biomesimple ~'FALSE',
+     ORCHIDEE_buffer %>% stringr::str_detect(biomesimple) ~ 'NEIGHBOURING'
+   )) %>%
+   dplyr::mutate(LPJLM = dplyr::case_when(
+     LPJLM_centre == biomesimple ~'TRUE',
+     LPJLM_centre != biomesimple ~'FALSE',
+     LPJLM_buffer %>% stringr::str_detect(biomesimple) ~ 'NEIGHBOURING'
+   ))
+ BiomePD2 <- BiomePD2[c(1:3,5,14:17)]
+ 
 
 
+ #Plotting
+ 
+ 
+ controlBiome <-ggplot(SIMFIRE1, aes(x=lon, y=lat, fill = biomes)) + geom_tile(alpha = 0.5) +  ggtitle('Control Biomes') +geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_manual(values = biome6kcol) 
+ LGMBiome <-ggplot(SIMFIRELGMLCF, aes(x=lon, y=lat)) + geom_tile(data = SIMFIRELGMLCF, aes(fill = biomes), alpha = 0.5) + ggtitle('LGM Biomes') + geom_point(data = BiomeLGM, aes(x= lon, y=lat,colour = biome)) + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80)) + scale_fill_manual(values = biome6kcol)  + scale_color_manual(values = biome6kcol, guide = FALSE)         
+ # BA rasters
+ controlBA <-ggplot(SIMFIREBA, aes(x=lon, y=lat, fill = BA.)) + geom_tile(alpha = 0.5) + ggtitle('Control Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
+ LGMBA <-ggplot(SIMFIRELGMBA, aes(x=lon, y=lat, fill = burntArea.monthly)) + geom_tile(alpha = 0.5) + ggtitle('LGM Burnt Area (%)') + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') + theme_pubr()+ scale_x_continuous(limits = c(-180,180)) + scale_y_continuous(limits = c(-60,80))+ scale_fill_distiller(palette = "Spectral")
+ #multiplot ----
+ plot2 <- ggarrange(controlBiome,controlBA, LGMBiome, LGMBA, 
+                    labels = c("A", "B", "C", "D"),
+                    ncol = 2, nrow = 2, common.legend = TRUE, legend="bottom")
+ annotate_figure(plot2, top = text_grob("SIMFIRE-BLAZE", 
+                                        color = "black", face = "bold", size = 18))
+ 
+ 
 
 
-for (i in 1:5) {
-  hist(r[[i]], main=(paste("plot",i)))
-}
+ ####################################
+ ############South America ###########
+ ####################################
+ #LGM
+SPITLGM <- ggplot(SPITFIRELGMLCF, aes(x=lon, y=lat, fill = biomes)) +
+   geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
+   geom_point(data = BiomeLGM2, aes(x= lon, y=lat,fill = SPITFIRE), colour="black",pch=21, alpha = 0.75) +
+   geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
+   theme_pubr()+
+   scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
+   scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
+   ggtitle('SPITFIRE') 
+     
+   SIMLGM <- ggplot(SIMFIRELGMLCF, aes(x=lon, y=lat, fill = biomes)) +
+     geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
+     geom_point(data = BiomeLGM2, aes(x= lon, y=lat,fill = SIMFIRE), colour="black",pch=21, alpha = 0.75) +
+     geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
+     theme_pubr()+
+     scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
+     scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
+   ggtitle('SIMFIRE') 
+   
+   ORCLGM <- ggplot(ORCHIDEELGMLCF, aes(x=lon, y=lat, fill = biomes)) +
+     geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
+     geom_point(data = BiomeLGM2, aes(x= lon, y=lat,fill = ORCHIDEE), colour="black",pch=21, alpha = 0.75) +
+     geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
+     theme_pubr()+
+     scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
+     scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
+     ggtitle('ORCHIDEE') 
 
 
+LPJLMLGM <- ggplot(LPJLMLGMLCF, aes(x=lon, y=lat, fill = biomes)) +
+  geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
+  geom_point(data = BiomeLGM2, aes(x= lon, y=lat,fill = LPJLM), colour="black",pch=21, alpha = 0.75) +
+  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
+  theme_pubr()+
+  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
+  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
+  ggtitle('LPJLM') 
 
 
+plot2 <- ggarrange(SPITLGM,SIMLGM, ORCLGM, LPJLMLGM, 
+                   labels = c("A", "B", "C", "D"),
+                   ncol = 2, nrow = 2, common.legend = TRUE, legend="bottom")
+annotate_figure(plot2, top = text_grob("LGM model to biome 6000 comparison", 
+                                       color = "black", face = "bold", size = 18))
 
-plot(rast)
-points(BiomeLGM$lon, BiomeLGM$lat, pch=0, cex = 2)
-points(BiomeLGM$lon,BiomeLGM$lat, pch=19, cex=.5, col = 2)
+#PD
+SPIT <- ggplot(SPITFIRELCF, aes(x=lon, y=lat, fill = biomes)) +
+  geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
+  geom_point(data = BiomePD2, aes(x= lon, y=lat,fill = SPITFIRE), colour="black",pch=21, alpha = 0.75) +
+  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
+  theme_pubr()+
+  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
+  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
+  ggtitle('SPITFIRE') 
+
+SIM <- ggplot(SIMFIRELCF, aes(x=lon, y=lat, fill = biomes)) +
+  geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
+  geom_point(data = BiomePD2, aes(x= lon, y=lat,fill = SIMFIRE), colour="black",pch=21, alpha = 0.75) +
+  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
+  theme_pubr()+
+  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
+  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
+  ggtitle('SIMFIRE') 
+
+ORC <- ggplot(ORCHIDEELCF, aes(x=lon, y=lat, fill = biomes)) +
+  geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
+  geom_point(data = BiomePD2, aes(x= lon, y=lat,fill = ORCHIDEE), colour="black",pch=21, alpha = 0.75) +
+  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
+  theme_pubr()+
+  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
+  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
+  ggtitle('ORCHIDEE') 
 
 
-
-bi <-shapefile(BiomeLGM)
-r <- data.frame(raster::extract(rast,             # raster layer
-                                BiomeLGM[,3:2],   # SPDF with centroids for buffer
-                                buffer = 10,  # buffer size, units depend on CRS
-                                fun = mean,
-                                # buffer size, units depend on CRS
-                                df=TRUE) )  
-
-# return a dataframe? 
-??raster::extract
-str(rast)
-colnames(r) <- c('ID', 'SPIT')
-
-BiomeLGM2<-cbind(BiomeLGM, r)
-??raster::extract
-BiomeLGM2 <- BiomeLGM2 %>%
-  dplyr::rowwise() %>% # this is key, so the operations are applied by row and not column
-  dplyr::mutate(SPIT = dplyr::case_when(
-    `SPIT`== 1  ~ "desert",
-    `SPIT`==  2 ~ "forest",
-    `SPIT`== 3~ "grassland and shrubland",
-    TRUE ~ NA_character_ # This is the default category
-  )) %>%
-  dplyr::ungroup() # Removes the 'rowwise' property from the table
+LPJLM <- ggplot(LPJLMLCF, aes(x=lon, y=lat, fill = biomes)) +
+  geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
+  geom_point(data = BiomePD2, aes(x= lon, y=lat,fill = LPJLM), colour="black",pch=21, alpha = 0.75) +
+  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
+  theme_pubr()+
+  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
+  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
+  ggtitle('LPJLM') 
 
 
-
-
+plot2 <- ggarrange(SPIT,SIM, ORC, LPJLM, 
+                   labels = c("A", "B", "C", "D"),
+                   ncol = 2, nrow = 2, common.legend = TRUE, legend="bottom")
+annotate_figure(plot2, top = text_grob("PD model to biome 6000 comparison", 
+                                       color = "black", face = "bold", size = 18))
 
 
 
