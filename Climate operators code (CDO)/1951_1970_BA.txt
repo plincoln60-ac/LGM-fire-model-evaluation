@@ -74,7 +74,7 @@ cdo -sub LGM_burntArea.nc LPJLM_BA_1951_1970.nc LPJLM_1951_1970_BA_diff.nc
 
 cd /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/ORCHIDEE/SF2\ LCC
 
-### need to manually extract this file if it doesn't work. I've deleted irrelevant timesteps so only 1901 to 1920 are left
+### need to manually extract this file if it doesn't work. I've deleted irrelevant timesteps
 tar -xzvf landCoverFrac.tar.gz 
 cd ./landCoverFrac
 rm landCoverFrac_2*.nc landCoverFrac_190* landCoverFrac_193* landCoverFrac_194*.nc landCoverFrac_192*.nc landCoverFrac_191*.nc landCoverFrac_198*.nc landCoverFrac_199*.nc landCoverFrac_17*.nc landCoverFrac_18*.nc landCoverFrac_1950.nc landCoverFrac_1971.nc landCoverFrac_1972.nc landCoverFrac_1973.nc landCoverFrac_1974.nc landCoverFrac_1975.nc landCoverFrac_1976.nc landCoverFrac_1977.nc landCoverFrac_1978.nc landCoverFrac_1979.nc
