@@ -72,7 +72,6 @@ landcoverfunction <-  function(df2) {
   )
 }
 
-
 SPITLCFfunction <- function(df){
   df <- df %>% tidync::hyper_tibble(force = T)
   df <- df[1:4]
@@ -155,6 +154,12 @@ LPJLMLCFfunction <- function(df){
   df <- df[c(1:2,12:19)]
   return(df)
 }
+BAfunction <- function(df){
+  df <- df %>% tidync::hyper_tibble(force = T)
+  df <- df[1:3]
+  colnames(df)<- c('BA', 'lon', 'lat')
+  return(df)
+}
 pts2poly_centroids <- function(x, y, ...) {
   # Input checks
   stopifnot(
@@ -212,10 +217,21 @@ SPITFIRELGMLCF <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM p
 SIMFIRELGMLCF <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SIMFIRE/SIMFIRE_LGM_LCF.nc")
 ORCHIDEELGMLCF <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/ORCHIDEE/ORCHIDEE_LGM_LCF.nc")
 LPJLMLGMLCF <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/LPJLM/LPJLM_LGM_landcoverfrac_90yr.nc")
+
 SPITFIRELGMLCF<-SPITLCFfunction(SPITFIRELGMLCF)
 SIMFIRELGMLCF <-SIMLGMLCFfunction(SIMFIRELGMLCF)
 ORCHIDEELGMLCF <- ORCLCFLGMfunction(ORCHIDEELGMLCF)
 LPJLMLGMLCF <- LPJLMLCFfunction(LPJLMLGMLCF)
+
+SPITFIRELGMBA <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SPITFIRE/LPJ-GUESS-SPITFIRE_LGM_BAmean.nc")
+SIMFIRELGMBA <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/SIMFIRE/LGM_burntArea.nc")
+ORCHIDEELGMBA <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/ORCHIDEE/ORCHIDEE_LGM_BAremap.nc")
+LPJLMLGMBA <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/LPJLM/LGM_burntArea.nc")
+
+SPITFIRELGMBA <- BAfunction(SPITFIRELGMBA)
+SIMFIRELGMBA <- BAfunction(SIMFIRELGMBA)
+ORCHIDEELGMBA <- BAfunction(ORCHIDEELGMBA)
+LPJLMLGMBA <- BAfunction(LPJLMLGMBA)
 
 #######################
 
@@ -328,31 +344,34 @@ BiomeLGM2 <- BiomeLGM2[1:9]
 SPITFIRELGMLCF<- SPITFIRELGMLCF %>%
   dplyr::rowwise() %>%
   dplyr::mutate(`biome_quant` = dplyr::case_when(
-    sum(`totveg`) <0.02 ~ "bare ground",
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
+    sum(`totveg`) <0.05 ~ "bare ground",
+    sum(`totveg`) >0.05 & `trees` >=0.4 ~'forest >40%',
+    sum(`totveg`) >0.05 & `trees` <0.4 ~'grassland and shrubland'
   ))
-  
+
 SIMFIRELGMLCF<- SIMFIRELGMLCF %>%
   dplyr::rowwise() %>%
   dplyr::mutate(`biome_quant` = dplyr::case_when(
-    sum(`totveg`) <0.02 ~ "bare ground",
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
+    sum(`totveg`) <0.05 ~ "bare ground",
+    sum(`totveg`) >0.05 & `trees` >=0.4 ~'forest >40%',
+    sum(`totveg`) >0.05 & `trees` <0.4 ~'grassland and shrubland'
   ))
 
 ORCHIDEELGMLCF<- ORCHIDEELGMLCF %>%
   dplyr::rowwise() %>%
   dplyr::mutate(`biome_quant` = dplyr::case_when(
-    sum(`totveg`) <0.02 ~ "bare ground",
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
+    sum(`totveg`) <0.05 ~ "bare ground",
+    sum(`totveg`) >0.05 & `trees` >=0.4 ~'forest >40%',
+    sum(`totveg`) >0.05 & `trees` <0.4 ~'grassland and shrubland'
   ))
 
   LPJLMLGMLCF<- LPJLMLGMLCF %>%
     dplyr::rowwise() %>%
     dplyr::mutate(`biome_quant` = dplyr::case_when(
-      sum(`totveg`) <0.02 ~ "bare ground",
-      `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
+      sum(`totveg`) <0.05 ~ "bare ground",
+      sum(`totveg`) >0.05 & `trees` >=0.4 ~'forest >40%',
+      sum(`totveg`) >0.05 & `trees` <0.4 ~'grassland and shrubland'
     ))
-
 ######################Add LGM mask to plots######################
 #################################################################
 
@@ -360,21 +379,10 @@ ORCHIDEELGMLCF<- ORCHIDEELGMLCF %>%
 #################################################################
 
 
-biome6kcolquant <- c('bare ground' = 'lightgoldenrod3',
+biome6kcolquant <- c('bare ground' = 'yellow2',
                      'forest >40%' = 'chartreuse4',
+                     'grassland and shrubland' = 'lightgoldenrod3',
                      'ice' = 'slategray1')
-
-
-  #c("bare ground" = 'grey90',
-  #             'forest <10%' = 'lightgreen',
-#           'forest >10%' = 'yellowgreen',
-#           'forest >40%' = 'chartreuse4',
-  #               'forest >70%' = 'darkgreen',
-#              'grassland and shrubland <10%' ='lightyellow1',
-  #              'grassland and shrubland >10%' ='lightgoldenrod1',
-#             'grassland and shrubland >40%' ='lightgoldenrod3',
-#           'grassland and shrubland >70%' ='lightgoldenrod4')
-
 
 
 ###############################################
@@ -409,6 +417,10 @@ SPITLGM <- ggplot(data=SPITFIRELGMLCF, aes(x=lon, y=lat)) +
   theme_pubr()+ labs_pubr(base_size = 12)+ 
   scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
   scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
   ggtitle('SPITFIRE') 
 
 SIMLGM <- ggplot(SIMFIRELGMLCF, aes(x=lon, y=lat)) +
@@ -420,6 +432,10 @@ SIMLGM <- ggplot(SIMFIRELGMLCF, aes(x=lon, y=lat)) +
   theme_pubr()+ labs_pubr(base_size = 12)+ 
   scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
   scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
   ggtitle('SIMFIRE') 
 
 ORCLGM <- ggplot(ORCHIDEELGMLCF, aes(x=lon, y=lat)) +
@@ -431,6 +447,10 @@ ORCLGM <- ggplot(ORCHIDEELGMLCF, aes(x=lon, y=lat)) +
   theme_pubr()+ labs_pubr(base_size = 12)+
   scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
   scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
   ggtitle('ORCHIDEE') 
 
 LPJLMLGM <- ggplot(data= LPJLMLGMLCF, aes(x=lon, y=lat)) +
@@ -442,6 +462,10 @@ LPJLMLGM <- ggplot(data= LPJLMLGMLCF, aes(x=lon, y=lat)) +
   theme_pubr()+ labs_pubr(base_size = 12)+
   scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
   scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
   ggtitle('LPJLM') 
 
 Biome_LGM_long <- gather(BiomeLGM2, model, Biome6k_match, LPJLM_match:SPITFIRE_match, factor_key=TRUE)
@@ -456,7 +480,6 @@ bl <- bl %>%
   model == 'LPJLM_match' ~'LPJLM'
 ))
 
-      
 
 Barplot <- ggplot(bl, aes(fill=Biome6k_match, y=n, x=model)) + 
   geom_bar(position="dodge", stat="identity") + geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.25)+ scale_fill_manual(values = barfill) +theme_pubr(border = F, margin = F) + labs_pubr(base_size = 12)+
@@ -487,64 +510,92 @@ jpeg(paste(plotdir, jpname, sep= "", quality = 1))
 plot(mplot)
 dev.off()
 
+###################################################
+###################compare to BA ##################
+###################################################
+
+##merge LCF and BA dfs
+SPITFIRE <- merge(SPITFIRELGMLCF,SPITFIRELGMBA, by = c('lat','lon'))
+SIMFIRE <- merge(SIMFIRELGMLCF,SIMFIRELGMBA, by = c('lat','lon'))
+ORCHIDEE <- merge(ORCHIDEELGMLCF,ORCHIDEELGMBA, by = c('lat','lon'))
+LPJLM <- merge(LPJLMLGMLCF,LPJLMLGMBA, by = c('lat','lon'))
 
 
+LPJLM$BA <- LPJLM$BA *100
+ORCHIDEE$BA <- ORCHIDEE$BA *100
 
 
+SPITBA <- ggplot(data=SPITFIRE, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = BA)) + scico::scale_fill_scico(palette = "lajolla", limits = c(0,60)) +
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  theme_pubr()+ labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
+  ggtitle('SPITFIRE BA') 
 
+SIMBA <- ggplot(data=SIMFIRE, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = BA)) + scico::scale_fill_scico(palette = "lajolla", limits = c(0,60)) +
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  theme_pubr()+ labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20)) +
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
+  ggtitle('SIMFIRE BA') 
 
-####################################
-############South America ###########----
-####################################
-#LGM
-Biomes <- ggplot() + geom_point(data = BiomeLGM2, aes(x=long, y=lat, fill = biomesimple), colour="black",pch=21, alpha = 0.75, size = 3) + scale_fill_manual(values = biome6kcol) + geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
-  theme_pubr()+
-  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
-  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
-  ggtitle('Biome 6000 LGM') 
+ORCBA <- ggplot(data=ORCHIDEE, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = BA)) + scico::scale_fill_scico(palette = "lajolla",limits = c(0,60)) +
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  theme_pubr()+ labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
+  ggtitle('ORCHIDEE BA') 
 
-SPITLGM <- ggplot(SPITFIRELGMLCF, aes(x=lon, y=lat, fill = biomes)) +
-  geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
-  geom_point(data = BiomeLGM2, aes(x= lon, y=lat,fill = SPITFIRE_match), colour="black",pch=21, alpha = 0.75) +
-  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
-  theme_pubr()+
-  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
-  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
-  ggtitle('SPITFIRE') 
+LPJLMBA <- ggplot(data=LPJLM, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = BA)) + scico::scale_fill_scico(palette = "lajolla", limits = c(0,60)) +
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  theme_pubr()+ labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+ 
+  theme(axis.text.x=element_blank(), #remove x axis labels
+                    axis.ticks.x=element_blank(), #remove x axis ticks
+                    axis.text.y=element_blank(),  #remove y axis labels
+                    axis.ticks.y=element_blank()) +
+  ggtitle('LPJLM BA') 
 
-SIMLGM <- ggplot(SIMFIRELGMLCF, aes(x=lon, y=lat, fill = biomes)) +
-  geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
-  geom_point(data = BiomeLGM2, aes(x= lon, y=lat,fill = SIMFIRE_match), colour="black",pch=21, alpha = 0.75) +
-  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
-  theme_pubr()+
-  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
-  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
-  ggtitle('SIMFIRE') 
-
-ORCLGM <- ggplot(ORCHIDEELGMLCF, aes(x=lon, y=lat, fill = biomes)) +
-  geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
-  geom_point(data = BiomeLGM2, aes(x= lon, y=lat,fill = ORCHIDEE_match), colour="black",pch=21, alpha = 0.75) +
-  geom_map(data = world, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
-  theme_pubr()+
-  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
-  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
-  ggtitle('ORCHIDEE') 
-
-
-LPJLMLGM <- ggplot(LPJLMLGMLCF, aes(x=lon, y=lat, fill = biomes)) +
-  geom_tile(alpha = 0.5) + scale_fill_manual(values = biome6kcol) + 
-  geom_point(data = BiomeLGM2, aes(x= lon, y=lat,fill = LPJLM_match), colour="black",pch=21, alpha = 0.75) +
-  geom_map(data = coastlines, map = world, aes(long, lat, map_id = region), size = 0.25, color = 'black', fill = 'transparent') +
-  theme_pubr()+
-  scale_x_continuous(limits = c(-95, -20),breaks = seq(-180, 180, 20)) + 
-  scale_y_continuous(limits = c(-40, 20), breaks = seq(-60, 90, 20))+
-  ggtitle('LPJLM') 
-
-
-plot2 <- ggarrange(SPITLGM,SIMLGM, ORCLGM, LPJLMLGM, 
+plot2 <- ggarrange(SPITLGM,SIMLGM, ORCLGM, LPJLMLGM,
                    labels = c("A", "B", "C", "D"),
-                   ncol = 2, nrow = 2, common.legend = TRUE, legend="bottom")
-annotate_figure(plot2, top = text_grob("LGM model to biome 6000 comparison", 
-                                       color = "black", face = "bold", size = 18))
+                   ncol = 1, nrow = 4, legend = 'none')
 
+plot <-  ggarrange(SPITBA,SIMBA, ORCBA, LPJLMBA,
+                   labels = c("A", "B", "C", "D"),
+                   ncol = 1, nrow = 4, legend = 'none')
 
+comp <-  ggarrange(plot2,plot,
+                   ncol = 2, nrow = 1, legend = 'none')
+plot(comp)
+leg <- get_legend(c(LPJLMLGM))
+
+??ggarrange
