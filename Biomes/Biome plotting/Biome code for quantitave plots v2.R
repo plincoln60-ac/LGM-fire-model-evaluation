@@ -598,4 +598,4 @@ comp <-  ggarrange(plot2,plot,
 plot(comp)
 leg <- get_legend(c(LPJLMLGM))
 
-??ggarrange
+table(SIMFIRELGMLCF$biome_quant)
