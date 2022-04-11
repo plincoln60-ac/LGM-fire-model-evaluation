@@ -71,9 +71,9 @@ SPITLCFfunction <- function(df){
   df$biomes <- 0
   df <- df %>%
     dplyr::mutate(biomes = dplyr::case_when(
-        sum(`totveg`) == 0 ~ "bare ground",
-        sum(`totveg`, na.rm = TRUE) >= 0  & `grassland` < `trees`~ "forest", 
-        sum(`totveg`, na.rm = TRUE) >= 0  & `trees` < `grassland`~ "grassland and shrubland")
+      sum(`totveg`) < 0.02 ~ "bare ground",
+      sum(`totveg`, na.rm = TRUE) >= 0.02  & `grassland` < `trees`~ "forest", 
+      sum(`totveg`, na.rm = TRUE) >= 0.02  & `trees` < `grassland`~ "grassland and shrubland")
     )
   df <- df[c(1:2,15:22)]
   
@@ -97,9 +97,9 @@ SIMLGMLCFfunction <- function(df){
   df$biomes <- 0
   df <- df %>%
     dplyr::mutate(biomes = dplyr::case_when(
-        sum(`totveg`) == 0 ~ "bare ground",
-        sum(`totveg`, na.rm = TRUE) >= 0  & `grassland` < `trees`~ "forest", 
-        sum(`totveg`, na.rm = TRUE) >= 0  & `trees` < `grassland`~ "grassland and shrubland")
+        sum(`totveg`) < 0.02 ~ "bare ground",
+        sum(`totveg`, na.rm = TRUE) >= 0.02  & `grassland` < `trees`~ "forest", 
+        sum(`totveg`, na.rm = TRUE) >= 0.02  & `trees` < `grassland`~ "grassland and shrubland")
     )
   df <- df[c(1:2,14:21)]
   return(df)
@@ -123,9 +123,9 @@ ORCLCFLGMfunction <- function(df){
   df$biomes <- 0
   df <- df %>%
     dplyr::mutate(biomes = dplyr::case_when(
-      sum(`totveg`) == 0 ~ "bare ground",
-      sum(`totveg`, na.rm = TRUE) >= 0  & `grassland` < `trees`~ "forest", 
-      sum(`totveg`, na.rm = TRUE) >= 0  & `trees` < `grassland`~ "grassland and shrubland")
+      sum(`totveg`) < 0.02 ~ "bare ground",
+      sum(`totveg`, na.rm = TRUE) >= 0.02  & `grassland` < `trees`~ "forest", 
+      sum(`totveg`, na.rm = TRUE) >= 0.02  & `trees` < `grassland`~ "grassland and shrubland")
     )
   df <- df[c(1:2,14:21)]
   return(df)
@@ -148,9 +148,9 @@ LPJLMLCFfunction <- function(df){
   df$biomes <- 0
   df <- df %>%
     dplyr::mutate(biomes = dplyr::case_when(
-      sum(`totveg`) == 0 ~ "bare ground",
-      sum(`totveg`, na.rm = TRUE) >= 0  & `grassland` < `trees`~ "forest", 
-      sum(`totveg`, na.rm = TRUE) >= 0  & `trees` < `grassland`~ "grassland and shrubland")
+      sum(`totveg`) < 0.02 ~ "bare ground",
+      sum(`totveg`, na.rm = TRUE) >= 0.02  & `grassland` < `trees`~ "forest", 
+      sum(`totveg`, na.rm = TRUE) >= 0.02  & `trees` < `grassland`~ "grassland and shrubland")
     )
   df <- df[c(1:2,12:19)]
   return(df)
@@ -323,62 +323,62 @@ BiomeLGM2 <- BiomeLGM2[1:9]
 SPITFIRELGMLCF<- SPITFIRELGMLCF %>%
   dplyr::rowwise() %>%
   dplyr::mutate(`biome_quant` = dplyr::case_when(
-    sum(`totveg`) == 0 ~ "bare ground",
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.7 ~'grassland and shrubland >70%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.4 & `grassland` <=0.7 ~'grassland and shrubland >40%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` <=0.1  ~'grassland and shrubland <10%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.1 & `grassland` <= 0.4 ~'grassland and shrubland >10%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.7 ~'forest >70%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` <=0.1  ~'forest <10%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.1 & `trees` <= 0.4 ~'forest >10%'
+    sum(`totveg`) < 0.02 ~ "bare ground",
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.7 ~'grassland and shrubland >70%',
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.4 & `grassland` <=0.7 ~'grassland and shrubland >40%',
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` <=0.1  ~'grassland and shrubland <10%',
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.1 & `grassland` <= 0.4 ~'grassland and shrubland >10%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.7 ~'forest >70%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` <=0.1  ~'forest <10%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.1 & `trees` <= 0.4 ~'forest >10%'
   ))
   
 
 SIMFIRELGMLCF<- SIMFIRELGMLCF %>%
   dplyr::rowwise() %>%
   dplyr::mutate(`biome_quant` = dplyr::case_when(
-    sum(`totveg`) == 0 ~ "bare ground",
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.7 ~'grassland and shrubland >70%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.4 & `grassland` <=0.7 ~'grassland and shrubland >40%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` <=0.1  ~'grassland and shrubland <10%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.1 & `grassland` <= 0.4 ~'grassland and shrubland >10%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.7 ~'forest >70%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` <=0.1  ~'forest <10%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.1 & `trees` <= 0.4 ~'forest >10%'
+    sum(`totveg`) < 0.02 ~ "bare ground",
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.7 ~'grassland and shrubland >70%',
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.4 & `grassland` <=0.7 ~'grassland and shrubland >40%',
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` <=0.1  ~'grassland and shrubland <10%',
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.1 & `grassland` <= 0.4 ~'grassland and shrubland >10%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.7 ~'forest >70%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` <=0.1  ~'forest <10%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.1 & `trees` <= 0.4 ~'forest >10%'
   ))
 
 ORCHIDEELGMLCF<- ORCHIDEELGMLCF %>%
   dplyr::rowwise() %>%
   dplyr::mutate(`biome_quant` = dplyr::case_when(
-    sum(`totveg`) == 0 ~ "bare ground",
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.7 ~'grassland and shrubland >70%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.4 & `grassland` <=0.7 ~'grassland and shrubland >40%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` <=0.1  ~'grassland and shrubland <10%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.1 & `grassland` <= 0.4 ~'grassland and shrubland >10%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.7 ~'forest >70%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` <=0.1  ~'forest <10%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.1 & `trees` <= 0.4 ~'forest >10%'
+    sum(`totveg`) < 0.02 ~ "bare ground",
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.7 ~'grassland and shrubland >70%',
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.4 & `grassland` <=0.7 ~'grassland and shrubland >40%',
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` <=0.1  ~'grassland and shrubland <10%',
+    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.1 & `grassland` <= 0.4 ~'grassland and shrubland >10%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.7 ~'forest >70%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` <=0.1  ~'forest <10%',
+    `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.1 & `trees` <= 0.4 ~'forest >10%'
   ))
 
   LPJLMLGMLCF<- LPJLMLGMLCF %>%
     dplyr::rowwise() %>%
     dplyr::mutate(`biome_quant` = dplyr::case_when(
-    sum(`totveg`) == 0 ~ "bare ground",
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.7 ~'grassland and shrubland >70%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.4 & `grassland` <=0.7 ~'grassland and shrubland >40%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` <=0.1  ~'grassland and shrubland <10%',
-    `biomes` == 'grassland and shrubland' & sum(`totveg`) >0 & `grassland` >0.1 & `grassland` <= 0.4 ~'grassland and shrubland >10%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.7 ~'forest >70%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` <=0.1  ~'forest <10%',
-    `biomes` == 'forest' & sum(`totveg`) >0 & `trees` >0.1 & `trees` <= 0.4 ~'forest >10%'
+      sum(`totveg`) < 0.02 ~ "bare ground",
+      `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.7 ~'grassland and shrubland >70%',
+      `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.4 & `grassland` <=0.7 ~'grassland and shrubland >40%',
+      `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` <=0.1  ~'grassland and shrubland <10%',
+      `biomes` == 'grassland and shrubland' & sum(`totveg`) >0.02 & `grassland` >0.1 & `grassland` <= 0.4 ~'grassland and shrubland >10%',
+      `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.7 ~'forest >70%',
+      `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.4 & `trees` <=0.7 ~'forest >40%',
+      `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` <=0.1  ~'forest <10%',
+      `biomes` == 'forest' & sum(`totveg`) >0.02 & `trees` >0.1 & `trees` <= 0.4 ~'forest >10%'
     ))
 
 
-biome6kcolquant <- c("bare ground" = 'grey90',
+biome6kcolquant <- c("bare ground" = 'yellow',
                 'forest <10%' = 'lightgreen',
                 'forest >10%' = 'yellowgreen',
                 'forest >40%' = 'chartreuse4',
@@ -386,7 +386,8 @@ biome6kcolquant <- c("bare ground" = 'grey90',
                 'grassland and shrubland <10%' ='lightyellow1',
                 'grassland and shrubland >10%' ='lightgoldenrod1',
                 'grassland and shrubland >40%' ='lightgoldenrod3',
-                'grassland and shrubland >70%' ='lightgoldenrod4')
+                'grassland and shrubland >70%' ='lightgoldenrod4', 
+                'ice' = 'slategray1')
 
 
 

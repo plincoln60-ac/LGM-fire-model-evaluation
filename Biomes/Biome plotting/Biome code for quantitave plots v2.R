@@ -66,9 +66,9 @@ landcoverfunction <-  function(df2) {
   d <- df2
   d %>%
   dplyr::mutate(biomes = dplyr::case_when(
-  sum(`totveg`) <0.2 ~ "bare ground",
-  sum(`totveg`, na.rm = TRUE) >= 0.4  & `grassland` < `trees`~ "forest", 
-  sum(`totveg`, na.rm = TRUE) >= 0  & `trees` < `grassland`~ "grassland and shrubland")
+    sum(`totveg`) <0.05 ~ "bare ground",
+    sum(`totveg`) >0.05 & `trees` >=0.4 ~'forest >40%',
+    sum(`totveg`) >0.05 & `trees` <0.4 ~'grassland and shrubland')
   )
 }
 
@@ -598,4 +598,7 @@ comp <-  ggarrange(plot2,plot,
 plot(comp)
 leg <- get_legend(c(LPJLMLGM))
 
-table(SIMFIRELGMLCF$biome_quant)
+
+
+
+ggplot(SPITFIRE, aes(x=trees, y=BA)) +geom_violin(alpha = 0.75,aes(fill = lat)) + scale_color_manual(values = biome6kcolquant)
