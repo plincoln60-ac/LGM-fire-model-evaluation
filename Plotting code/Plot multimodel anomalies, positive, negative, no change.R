@@ -10,14 +10,12 @@ library(rasterVis)
 library(ggplot2)
 library(rgdal) # package for geospatial analysis
 library(reshape2)
-
 ############## Load up mean BA models & convert to dfs -----
 meanBA <- tidync("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/BA/Model means/1951_1970_mean_BA.nc")
 SPITBA <-tidync("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/BA/Model means/SPITFIRE_1951_1970_BA_diff.nc")
 SIMBA <- tidync("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/BA/Model means/SIMFIRE_1951_1970_BA_diff1.nc")
 ORCBA <-tidync("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/BA/Model means/ORCHIDEE_1951_1970_BA_diff1.nc")
 LMBA <- tidync("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/BA/LPJ LM/LPJLM_1951_1970_BA_diff.nc")
-
 
 #SIMBA_scale <- tidync("/Volumes/PL SSD/Fire models Jan 2021/SIMFIRE-BLAZE/v2 FLa/scalev2.nc")
 #SIMBA_scale <- tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/November_21_new_references/SIMFIRE/scale_v2trial.nc")
@@ -40,6 +38,7 @@ ORCBA <- ORCBA[,1:3]
 LMBA <- LMBA %>% hyper_tibble(force = T)
 colnames(LMBA) <- c("LMBA", "lon", "lat", "time")
 LMBA <- LMBA[,1:3]
+LMBA$LMBA <- LMBA$LMBA *100
 ###write dimensions
 LGM <- nc_open("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/BA/Model means/1951_1970_mean_BA.nc")
 
@@ -78,63 +77,117 @@ BA_plot <- melt(all_BA, id.vars = c('agreement', 'lat', 'lon'), measure.vars = c
 write.csv(all_BA, '~/Dropbox/2022/LGM Fire figures/BA_agreement.csv')
 
 ######## Plot output ----
+#LGM ice raster file
+p <- raster('/Volumes/PL SSD/Shapefiles/LGM mask/LGM mask2.tif')
+p[p==1] <- 'ice'
 
-#number of variables in the data frame??
-nt <- 1
-lat <- as.numeric(seq(-56.25, 83.25, 0.5))
+dfp <- as.data.frame(p, xy= T)
+dfp2 <- dfp %>% filter(LGM_mask2 == 'ice')
+colnames(dfp2) <- c('lon','lat','ice')
+#####get simple global coastline shapefile####
+download.file("http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_coastline.zip",  destfile = 'coastlines.zip')
+unzip(zipfile = "coastlines.zip", 
+      exdir = 'ne-coastlines-10m')
+coastlines <- readOGR("ne-coastlines-10m/ne_10m_coastline.shp")
+coastlines <- SpatialLinesDataFrame(coastlines,
+                                    coastlines@data)
 
-# create arrays
-# nlon * nlat * nt array
-fillvalue <- NA
-BA_array <- array(fillvalue, dim=c(nlon,nlat,nt+2))
-dim(BA_array)
-
-# loop over the rows in the data frame 
-# most explicit,
-ptm <- proc.time() # time the loop
-nobs <- dim(BA_agreement)[1]
-for(i in 1:nobs) {
-  
-  # figure out location in the target array of the values in each row of the data frame
-  j <- which.min(abs(lon-BA_agreement$lon[i]))
-  k <- which.min(abs(lat-BA_agreement$lat[i]))
-  
-  # copy data from the data frame to array
-  BA_array[j,k,nt] <- as.matrix(BA_agreement[i,nt+2]) #columns are troublesome here
-}
-dim(BA_array)
-print(BA_array)
-#plot to check data
-library(lattice)
-library(RColorBrewer)
-
-grid <- expand.grid(lon=lon, lat=lat)
-
-# Set color palette for plot
+cutpts<- seq(-80,80, by=  10)
+cutpts <- rev(cutpts)
+??seq
 zeroCol <-"#FFFFFF" # (gray color, same as your figure example)
-reds <- brewer.pal('YlOrRd', n = 7)
-blues <- rev(brewer.pal('Blues', n = 7))
-
-myTheme <- rasterTheme(region = c(blues, reds))
-#plot difference
-cutpts <- c(1,2,3,4)
-grid <- expand.grid(lon=lon, lat=lat)
-BA_array <- ratify(BA_array)
-levelplot(BA_array[1] ~ lon * lat, at = cutpts, data=grid) + layer(sp.lines(countries))
-levelplot(BA_array ~ lon * lat, data=grid, at=cutpts, cuts=20, pretty=T, par.settings = myTheme) + layer(sp.lines(countries)) +  layer(sp.points(dummy2,pch= 1,cex=0.1, col=1)) + layer(sp.points(dummy2,pch= 1,cex=0.5, col=2))
+reds <- brewer.pal('YlOrRd', n = 9)
+blues <- rev(brewer.pal('Blues', n = 9))
+myTheme <- rasterTheme(region = c(blues, zeroCol, reds))
 
 
-library("rnaturalearth")
-library("rnaturalearthdata")
+SPIT <- ggplot(data=all_BA, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = SPITBA)) + scale_fill_binned(low = blues ,high = reds, breaks = c(cutpts), limits= c(-80,80)) +
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  theme_pubr()+ labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
+  ggtitle('SPITFIRE BA anomaly') 
+SPIT <- SPIT + guides(fill=guide_legend(title="Burnt Area anomaly (%)"))
 
-world <- ne_countries(scale = "medium", returnclass = "sf")
-class(world)
-world <- map_data("world")
+SIM <- ggplot(data=all_BA, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = SIMBA)) + scale_fill_binned(low = blues ,high = reds, breaks = c(cutpts), limits= c(-80,80)) +
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  theme_pubr()+ labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
+  ggtitle('SIMFIRE BA anomaly') 
 
-#plot model agreement
-ggplot(data = world) + geom_map(
-  data = world, map = world,
-  aes(long, lat, map_id = region), color = 'gray', fill = 'white') + geom_tile(data = BA_agreement, aes(x = lon, y = lat, fill = agreement)) +
-  coord_quickmap() + theme_classic() 
- 
+ORC<- ggplot(data=all_BA, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = ORCBA)) + scale_fill_binned(low = blues ,high = reds, breaks = c(cutpts), limits= c(-80,80)) +
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  theme_pubr()+ labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
+  ggtitle('ORCHIDEE BA anomaly') 
+
+LPJLM <- ggplot(data=all_BA, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = LMBA)) + scale_fill_binned(low = blues ,high = reds, breaks = c(cutpts), limits= c(-80,80)) +
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  theme_pubr()+ labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
+  ggtitle('LPJLM BA anomaly') 
+
+all_BA$agreement <- as.factor(all_BA$agreement)
+pallette <- c('2' = 'orangered2',
+             '3' = 'lightgoldenrod2',
+             '4' = 'chartreuse3')
+
+AGR <-ggplot(data=all_BA, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = agreement)) + 
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') + scale_fill_manual(values = pallette)+
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  theme_pubr()+ labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) +
+  ggtitle('Model BA agreement') 
+AGR <- AGR + guides(fill=guide_legend(title="Model anomaly agreement (n)"))
+
+AGR
+
+??scale_fill_discrete
+p2 <-  ggarrange(SPIT, SIM,ORC,LPJLM,
+                 ncol = 2, nrow = 2, common.legend = T, legend = 'right')
+
+
 

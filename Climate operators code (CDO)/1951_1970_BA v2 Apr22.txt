@@ -9,15 +9,24 @@ cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SPITFIRE/SF2\ FLa/LPJ-GUESS-SPITFIRE
 cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SPITFIRE/
 
 cdo timmean -seltimestep,251/270 LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970.nc 
+cdo timstd -seltimestep,251/270 LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970std.nc 
 
 cdo timmean -seltimestep,1/90 -timselsum,12 LPJ-GUESS-SPITFIRE_LGM_BA.nc LPJ-GUESS-SPITFIRE_LGM_BA1.nc 
+cdo timstd -seltimestep,1/90 -timselsum,12 LPJ-GUESS-SPITFIRE_LGM_BA.nc LPJ-GUESS-SPITFIRE_LGM_BAstd1.nc 
 
 cdo griddes LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc  > SPITFIRE.grd
 cdo remapbil,SPITFIRE.grd LPJ-GUESS-SPITFIRE_LGM_BA1.nc SPITFIRE_LGM_BA.nc
+cdo remapbil,SPITFIRE.grd LPJ-GUESS-SPITFIRE_LGM_BAstd1.nc  LPJ-GUESS-SPITFIRE_LGM_BAstd.nc 
 
-cdo -sub SPITFIRE_LGM_BA.nc  LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970.nc SPITFIRE_1951_1970_BA_diff.nc
+cdo -add LPJ-GUESS-SPITFIRE_LGM_BAstd.nc  LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970std.nc  SPITFIRE_std.nc
 
-rm LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_BA.nc LPJ-GUESS-SPITFIRE_LGM_BA1.nc
+cdo chname,BA,BA_sd SPITFIRE_std.nc SPITFIRE_sd.nc
+
+cdo -sub SPITFIRE_LGM_BA.nc  LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970.nc SPITFIRE_1951_1970_BA_diff1.nc 
+cdo merge SPITFIRE_1951_1970_BA_diff1.nc SPITFIRE_sd.nc SPITFIRE_1951_1970_BA_diff.nc
+
+
+rm SPITFIRE_1951_1970_BA_diff1.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_BA.nc LPJ-GUESS-SPITFIRE_LGM_BA1.nc LPJ-GUESS-SPITFIRE_LGM_BAstd.nc  LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970std.nc SPITFIRE_std.nc SPITFIRE_sd.nc
 
 #SIMFIRE LGM
 cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/LGM\ SF1/LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SIMFIRE/LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc
@@ -39,35 +48,60 @@ cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/Nov
 cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/v2\ FLa/LPJ-GUESS-BLAZE_SF2_FLa_BA.nc  ./LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc
 cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/LGM\ SF1/LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc  ./LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc 
 
+
 cdo -timmean -seltimestep,252/271 -timselsum,12 LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970.nc 
-rm LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc
+cdo -timstd -seltimestep,252/271 -timselsum,12 LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970std.nc 
+
 
 cdo -timmean -seltimestep,10/100 -timselsum,12 LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc SF1_burntArea.nc
-cdo timmean scalev2.nc scale_v2.nc 
+cdo -timstd -seltimestep,10/100 -timselsum,12 LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc SF1_burntAreastd.nc
 
-rm LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc LPJ-GUESS-BLAZE_SF2_FLa_BA.nc  scalev2.nc 
+cdo timmean scalev2.nc scale_v2.nc 
+cdo -add SF1_burntAreastd.nc  LPJ-GUESS-BLAZE_v2_BA_1951_1970std.nc  SIMFIRE_std1.nc
+cdo chname,burntArea.monthly,BA_sd SIMFIRE_std1.nc SIMFIRE_std.nc
+
+
 cdo -mul LPJ-GUESS-BLAZE_v2_BA_1951_1970.nc scale_v2.nc LPJ-GUESS-BLAZE_v2_scaled.nc
 #cdo setrtomiss,100,10000000000000000 LPJ-GUESS-BLAZE_v1_scaled.nc LPJ-GUESS-BLAZE_v1_scaled1.nc
 
-cdo -sub SF1_burntArea.nc LPJ-GUESS-BLAZE_v2_scaled.nc SIMFIRE_1951_1970_BAv2_diff.nc
-rm SF1_burntArea.nc LPJ-GUESS-BLAZE_v2_scaled.nc
+cdo -sub SF1_burntArea.nc LPJ-GUESS-BLAZE_v2_scaled.nc SIMFIRE_1951_1970_BAv2_diff1.nc
+cdo chname,burntArea.monthly,BA SIMFIRE_1951_1970_BAv2_diff1.nc SIMFIRE_1951_1970_BAv2_diff2.nc
+cdo merge SIMFIRE_1951_1970_BAv2_diff2.nc SIMFIRE_std.nc SIMFIRE_1951_1970_BA_diff.nc
+
+rm SIMFIRE_1951_1970_BAv2_diff2.nc SF1_burntArea.nc LPJ-GUESS-BLAZE_v2_scaled.nc LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc LPJ-GUESS-BLAZE_SF2_FLa_BA.nc  scalev2.nc SF1_burntAreastd.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970std.nc SIMFIRE_std1.nc SIMFIRE_1951_1970_BAv2_diff1.nc SIMFIRE_std.nc
 
 #LPJ LM LGM
 
-cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/LPJ-LMfire/Variables/LPJLM_LGM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/LPJ\ LM/LPJLM_LGM_BA.nc
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/LPJLMfire/Variables/LPJLM_LGM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/LPJ\ LM/LPJLM_LGM_BA.nc
 
 #LPJ LM SF2
 
-cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/LPJ-LMfire/Variables/LPJLM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/LPJ\ LM/LPJLM_BA.nc
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/LPJLMfire/Variables/LPJLM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/LPJ\ LM/LPJLM_BA.nc
 
 cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/LPJ\ LM
 
 cdo timmean -seltimestep,251/270  LPJLM_BA.nc  LPJLM_BA_1951_1970.nc 
+cdo timstd -seltimestep,251/270  LPJLM_BA.nc  LPJLM_BA_1951_1970std.nc 
 cdo timmean -seltimestep,51/150 LPJLM_LGM_BA.nc LGM_burntArea.nc
+cdo timstd -seltimestep,51/150 LPJLM_LGM_BA.nc LGM_burntAreastd.nc
 
-rm LPJLM_BA.nc LPJLM_LGM_BA.nc
+cdo -add LGM_burntAreastd.nc LPJLM_BA_1951_1970std.nc LPJLM_std1.nc
+cdo -mulc,100 LPJLM_std1.nc LPJLM_std2.nc 
+cdo chname,burnedf,BA_sd LPJLM_std2.nc LPJLM_std.nc 
 
-cdo -sub LGM_burntArea.nc LPJLM_BA_1951_1970.nc LPJLM_1951_1970_BA_diff.nc
+cdo -sub LGM_burntArea.nc LPJLM_BA_1951_1970.nc LPJLM_1951_1970_BA_diff1.nc
+cdo -mulc,100 LPJLM_1951_1970_BA_diff1.nc LPJLM_1951_1970_BA_diff2.nc 
+rm LPJLM_1951_1970_BA_diff1.nc
+
+cdo chname,burnedf,BA LPJLM_1951_1970_BA_diff2.nc LPJLM_1951_1970_BA_diff1.nc 
+
+
+
+cdo merge LPJLM_1951_1970_BA_diff1.nc LPJLM_std.nc LPJLM_1951_1970_BA_diff.nc
+
+
+rm LPJLM_BA.nc LPJLM_LGM_BA.nc LPJLM_std.nc LPJLM_1951_1970_BA_diff1.nc LPJLM_BA_1951_1970.nc LPJLM_1951_1970_BA_diff1.nc LPJLM_std.nc LPJLM_1951_1970_BA_diff2.nc LPJLM_std1.nc LPJLM_std2.nc LPJLM_BA_1951_1970std.nc LGM_burntAreastd.nc LGM_burntArea.nc
+
 
 #ORCHIDEE SF2 note that BA values are daily for each timestep so have been converted to monthly values first
 #get scale
@@ -110,11 +144,14 @@ cdo -mulc,31 -selmon,1,3,5,7,8,10,12 outfile.nc 31daymons.nc
 cdo -mulc,28 -selmon,2 outfile.nc 28daymons.nc 
 
 cdo -timmean -timselsum,12 -vertsum -mergetime 30daymons.nc 31daymons.nc 28daymons.nc ORCHIDEE_BA.nc
+cdo -timstd -timselsum,12 -vertsum -mergetime 30daymons.nc 31daymons.nc 28daymons.nc ORCHIDEE_BA_std.nc
 
 rm 30daymons.nc 31daymons.nc 28daymons.nc outfile.nc
 
 
-mv ./ORCHIDEE_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_SF2_BA.nc
+cp ./ORCHIDEE_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_SF2_BA.nc
+cp ./ORCHIDEE_BA_std.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_SF2_BAstd.nc
+
 cd ../
 rm -r burntArea
 #LGM values have already been georeffed using the R code in the LGM file
@@ -141,10 +178,12 @@ cdo  -mergetime 30daymons.nc 31daymons.nc 28daymons.nc merge.nc
 cdo -vertsum  merge.nc vmerge.nc
 cdo -timselsum,12 vmerge.nc tmerge.nc
 cdo timmean  tmerge.nc ORCHIDEE_LGM_BA.nc
-rm merge.nc vmerge.nc tmerge.nc 30daymons.nc 31daymons.nc 28daymons.nc O
+cdo timstd tmerge.nc ORCHIDEE_LGM_BAstd.nc
+rm merge.nc vmerge.nc tmerge.nc 30daymons.nc 31daymons.nc 28daymons.nc 
 
 
-mv ./ORCHIDEE_LGM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_LGM_BA.nc
+cp ./ORCHIDEE_LGM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_LGM_BA.nc
+cp ./ORCHIDEE_LGM_BAstd.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_LGM_BAstd.nc
 
 
 
@@ -159,17 +198,25 @@ rm scale.nc
 #remap LGM model
 cdo griddes ORCHIDEE_SF2_BA.nc > ORCHIDEE.grd
 cdo remapbil,ORCHIDEE.grd ORCHIDEE_LGM_BA.nc ORCHIDEE_LGM_BA1.nc
-cdo remapbil,ORCHIDEE.grd ORCHIDEE_LGM_30_day_month_BA.nc ORCHIDEE_LGM_30_day_month_BA1.nc
+cdo remapbil,ORCHIDEE.grd ORCHIDEE_LGM_BAstd.nc ORCHIDEE_LGM_BAstd1.nc
+
 #scale modern for land cover
-cdo mul ORCHIDEE_SF2_BA.nc scale_annual.nc ORCHIDEE_BA_1951_1970_scale.nc
-cdo mul ORCHIDEE_BA_30_day_month.nc scale_annual.nc ORCHIDEE_BA_1951_1970_30day_scale.nc
+cdo mul ORCHIDEE_SF2_BA.nc scale_annual.nc ORCHIDEE_BA_1951_1970_scale1.nc
 
-
-rm ORCHIDEE_LGM_BA.nc ORCHIDEE_LGM_30_day_month_BA.nc ORCHIDEE_SF2_BA.nc
 
 #calculate difference
-cdo -sub ORCHIDEE_LGM_BA1.nc ORCHIDEE_BA_1951_1970_scale.nc ORCHIDEE_1951_1970_BA_diff.nc
-cdo -sub ORCHIDEE_LGM_30_day_month_BA1.nc ORCHIDEE_BA_1951_1970_30day_scale.nc ORCHIDEE_1951_1970_BA_30day_month_diff.nc
+cdo -add ORCHIDEE_SF2_BAstd.nc ORCHIDEE_LGM_BAstd1.nc ORCHIDEE_std1.nc
+cdo chname,burntArea,BA_sd ORCHIDEE_std1.nc ORCHIDEE_std.nc
+cdo chname,burntArea,BA ORCHIDEE_BA_1951_1970_scale1.nc ORCHIDEE_BA_1951_1970_scale.nc
+
+cdo -sub ORCHIDEE_LGM_BA1.nc ORCHIDEE_BA_1951_1970_scale.nc ORCHIDEE_1951_1970_BA_diff1.nc
+
+cdo merge ORCHIDEE_1951_1970_BA_diff1.nc ORCHIDEE_std1.nc ORCHIDEE_1951_1970_BA_diff1.nc
+cdo chname,burntArea,BA_sd ORCHIDEE_1951_1970_BA_diff1.nc ORCHIDEE_1951_1970_BA_diff.nc
+
+rm ORCHIDEE_LGM_BAstd.nc ORCHIDEE_1951_1970_BA_diff1.nc ORCHIDEE_BA_1951_1970_scale1.nc ORCHIDEE_BA_1951_1970_scale.nc ORCHIDEE_std1.nc ORCHIDEE_std.nc ORCHIDEE_LGM_BA1.nc ORCHIDEE_BA_1951_1970_scale.nc ORCHIDEE_SF2_BAstd.nc ORCHIDEE_LGM_BAstd1.nc ORCHIDEE_std1.nc ORCHIDEE_LGM_BA.nc ORCHIDEE_LGM_30_day_month_BA.nc ORCHIDEE_SF2_BA.nc
+
+
 
 cd ../
 mkdir ./Model\ means
@@ -204,7 +251,11 @@ mv  -v /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison
 
 
 
+cdo remapbil,SPITFIRE.grd  ORCHIDEE_1951_1970_BA_diff1.nc ORCHIDEE_1951_1970_BA_diff.nc
 
+
+
+ORCHIDEE_1951_1970_BA_diff1.nc
 
 
 

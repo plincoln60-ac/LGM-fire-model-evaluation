@@ -1,0 +1,182 @@
+#SPITFIRE LGM
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SPITFIRE/LGM\ SF1/LPJ-GUESS-SPITFIRE_LGM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SPITFIRE/LPJ-GUESS-SPITFIRE_LGM_BA1.nc 
+#SPITFIRE SF2
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SPITFIRE/SF2\ FLa/LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SPITFIRE/LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc 
+
+cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SPITFIRE/
+
+cdo  -seltimestep,251/270 LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970_raw.nc 
+cdo  -seltimestep,251/270 LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970_baseline.nc 
+
+
+cdo griddes LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc  > SPITFIRE.grd
+cdo remapbil,SPITFIRE.grd LPJ-GUESS-SPITFIRE_LGM_BA1.nc LPJ-GUESS-SPITFIRE_LGM_BA.nc
+rm LPJ-GUESS-SPITFIRE_LGM_BA1.nc
+cdo  -timselsum,12 LPJ-GUESS-SPITFIRE_LGM_BA.nc LPJ-GUESS-SPITFIRE_LGM_BAraw1.nc 
+cdo  -seltimestep,1/90 LPJ-GUESS-SPITFIRE_LGM_BAraw1.nc LPJ-GUESS-SPITFIRE_LGM_BAraw.nc 
+cdo -sub LPJ-GUESS-SPITFIRE_LGM_BAraw.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970_raw.nc LPJ-GUESS-SPITFIRE_BA_anomaly_raw.nc
+cdo -sub LPJ-GUESS-SPITFIRE_LGM_BAraw.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970_baseline.nc LPJ-GUESS-SPITFIRE_BA_anomaly_baseline.nc
+cdo timstd LPJ-GUESS-SPITFIRE_BA_anomaly_baseline.nc LPJ-GUESS-SPITFIRE_BA_anomaly_baselinesd.nc 
+
+
+
+rm LPJ-GUESS-SPITFIRE_LGM_BAraw1.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_BA.nc
+
+#SIMFIRE LGM
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/LGM\ SF1/LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970_raw.nc  /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SIMFIRE/LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970_raw.nc 
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/LGM\ SF1/LPJ-GUESS-SPITFIRE_LGM_BAraw.nc  /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SIMFIRE/LPJ-GUESS-SPITFIRE_LGM_BAraw.nc 
+
+#SIMFIRE SF2
+##scale for landuse 
+cd /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/v2\ FLa 
+cdo -seltimestep,252/271  LPJ-GUESS-BLAZE_SF2_FLa_landCoverFrac2.nc lcf.nc
+cdo -vertsum -sellevel,3/13 lcf.nc natsum.nc
+cdo -vertsum lcf.nc totalsum.nc
+cdo expr,'bareground=1-landCoverFrac;' totalsum.nc bareground.nc
+cdo add natsum.nc bareground.nc total_natural.nc
+cdo expr,'scale=1/landCoverFrac;' total_natural.nc scalev2.nc
+rm natsum.nc bareground.nc totalsum.nc total_natural.nc lcf.nc
+cp ./scalev2.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SIMFIRE/scalev2.nc
+
+
+cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SIMFIRE
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/v2\ FLa/LPJ-GUESS-BLAZE_SF2_FLa_BA.nc  ./LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/LGM\ SF1/LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc  ./LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc 
+
+
+cdo  -seltimestep,252/271 -timselsum,12 LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc 
+
+cdo -seltimestep,10/100 -timselsum,12 LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc LPJ-GUESS-BLAZE_LGM_BAraw.nc
+
+
+cdo -mul LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc scale_v2.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970raw.nc
+cdo -timmean LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc  LPJ-GUESS-BLAZE_v2_BA_1951_1970_baseline.nc
+
+
+cdo -sub LPJ-GUESS-BLAZE_LGM_BAraw.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970raw.nc LPJ-GUESS-BLAZE_BA_anomaly_raw.nc
+cdo -sub LPJ-GUESS-BLAZE_LGM_BAraw.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970_baseline.nc LPJ-GUESS-BLAZE_BA_anomaly_baseline.nc
+cdo timstd LPJ-GUESS-BLAZE_BA_anomaly_baseline.nc LPJ-GUESS-BLAZE_anomaly_baselinesd.nc 
+
+
+
+rm LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc
+#cdo setrtomiss,100,10000000000000000 LPJ-GUESS-BLAZE_v1_scaled.nc LPJ-GUESS-BLAZE_v1_scaled1.nc
+
+
+rm SIMFIRE_1951_1970_BAv2_diff2.nc SF1_burntArea.nc LPJ-GUESS-BLAZE_v2_scaled.nc LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc LPJ-GUESS-BLAZE_SF2_FLa_BA.nc  scalev2.nc SF1_burntAreastd.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970std.nc SIMFIRE_std1.nc SIMFIRE_1951_1970_BAv2_diff1.nc SIMFIRE_std.nc
+
+#LPJ LM LGM
+
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/LPJLMfire/Variables/LPJLM_LGM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/LPJ\ LM/LPJLM_LGM_BA.nc
+
+#LPJ LM SF2
+
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/LPJLMfire/Variables/LPJLM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/LPJ\ LM/LPJLM_BA.nc
+
+cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/LPJ\ LM
+
+cdo  -mulc,100 -seltimestep,251/270  LPJLM_BA.nc  LPJLM_BA_1951_1970_raw.nc 
+cdo  -timmean -mulc,100 -seltimestep,251/270  LPJLM_BA.nc  LPJLM_BA_1951_1970_baseline.nc 
+
+cdo  -mulc,100 -seltimestep,61/150 LPJLM_LGM_BA.nc LPJLM_BA_LGM_BAraw.nc 
+
+
+cdo -sub LPJLM_BA_LGM_BAraw.nc LPJLM_BA_1951_1970_raw.nc LPJLM_BA_anomaly_raw.nc
+cdo -sub LPJLM_BA_LGM_BAraw.nc LPJLM_BA_1951_1970_baseline.nc LPJLM_BA_anomaly_baseline.nc
+
+
+rm LPJLM_BA.nc LPJLM_LGM_BA.nc
+
+
+#ORCHIDEE SF2 note that BA values are daily for each timestep so have been converted to monthly values first
+#get scale
+
+cd /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/ORCHIDEE/SF2\ LCC
+
+### need to manually extract this file if it doesn't work. I've deleted irrelevant timesteps
+tar -xzvf landCoverFrac.tar.gz 
+cd ./landCoverFrac
+rm landCoverFrac_2*.nc landCoverFrac_190* landCoverFrac_193* landCoverFrac_194*.nc landCoverFrac_192*.nc landCoverFrac_191*.nc landCoverFrac_198*.nc landCoverFrac_199*.nc landCoverFrac_17*.nc landCoverFrac_18*.nc landCoverFrac_1950.nc landCoverFrac_1971.nc landCoverFrac_1972.nc landCoverFrac_1973.nc landCoverFrac_1974.nc landCoverFrac_1975.nc landCoverFrac_1976.nc landCoverFrac_1977.nc landCoverFrac_1978.nc landCoverFrac_1979.nc
+
+
+cdo mergetime *.nc outfile.nc
+rm landCoverFrac_*.nc
+
+cdo -vertsum -sellevel,1/11 outfile.nc natsum.nc
+cdo -divc,100 natsum.nc natsumfrac.nc
+cdo expr,'scale=1/landCoverFrac;' natsumfrac.nc scale.nc
+cp ./scale.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/scale.nc
+cd ../
+rm -r landCoverFrac
+
+
+#extract monthly values
+cd /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/ORCHIDEE/SF2\ LCC
+rm -r burntArea
+tar -xzvf burntArea.tar.gz
+cd ./burntArea
+rm burntArea_190*.nc burntArea_2*.nc burntArea_193* burntArea_194*.nc burntArea_192*.nc burntArea_191*.nc burntArea_198*.nc burntArea_199*.nc burntArea_17*.nc burntArea_18*.nc burntArea_1950.nc burntArea_1971.nc burntArea_1972.nc burntArea_1973.nc burntArea_1974.nc burntArea_1975.nc burntArea_1976.nc burntArea_1977.nc burntArea_1978.nc burntArea_1979.nc
+
+cdo mergetime *.nc outfile.nc
+
+#cdo -seltimestep,2412/2651 time.nc outfile.nc
+rm burntArea_*.nc 
+
+cdo -mulc,30 -selmon,4,6,9,11 outfile.nc 30daymons.nc 
+#31 day months
+cdo -mulc,31 -selmon,1,3,5,7,8,10,12 outfile.nc 31daymons.nc 
+#28 day months
+cdo -mulc,28 -selmon,2 outfile.nc 28daymons.nc 
+
+cdo -timselsum,12 -vertsum -mergetime 30daymons.nc 31daymons.nc 28daymons.nc ORCHIDEE_BA.nc
+
+rm 30daymons.nc 31daymons.nc 28daymons.nc outfile.nc
+
+
+cp ./ORCHIDEE_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_BA_1951_1970_raw.nc
+
+cd ../
+rm -r burntArea
+#LGM values have already been georeffed using the R code in the LGM file
+
+cd  /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/ORCHIDEE/Georeffed
+####presuming here that Jan, not Feb is the first month
+cdo -settaxis,1900-02-01,12:00:00,1mon ORCHIDEE_LGM_BA_Nov21.nc outfile1.nc
+cdo -seltimestep,121/1200 outfile1.nc outfile.nc 
+
+#30 day months
+cdo  -selmon,4,6,9,11 outfile.nc 30daymons1.nc 
+cdo -mulc,30 30daymons1.nc 30daymons.nc
+rm 30daymons1.nc
+#31 day months
+cdo -selmon,1,3,5,7,8,10,12 outfile.nc 31daymons1.nc 
+cdo -mulc,31 31daymons1.nc 31daymons.nc
+rm 31daymons1.nc
+#28 day months
+cdo -selmon,2 outfile.nc 28daymons1.nc 
+cdo -mulc,28 28daymons1.nc 28daymons.nc
+rm 28daymons1.nc
+
+cdo  -mergetime 30daymons.nc 31daymons.nc 28daymons.nc merge.nc
+cdo -vertsum  merge.nc vmerge.nc
+cdo -timselsum,12 vmerge.nc ORCHIDEE_LGM_BA.nc
+
+
+rm merge.nc vmerge.nc tmerge.nc 30daymons.nc 31daymons.nc 28daymons.nc 
+
+
+cp ./ORCHIDEE_LGM_BA.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_LGM_BAraw1.nc
+
+cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/
+
+cdo timmean ORCHIDEE_BA_1951_1970_raw.nc ORCHIDEE_BA_1951_1970_baseline.nc
+cdo griddes ORCHIDEE_BA_1951_1970_baseline.nc > ORCHIDEE.grd
+cdo remapbil,ORCHIDEE.grd ORCHIDEE_LGM_BAraw1.nc ORCHIDEE_LGM_BAraw.nc
+
+cdo -sub ORCHIDEE_LGM_BAraw.nc ORCHIDEE_BA_1951_1970_raw.nc LPJLM_BA_anomaly_raw.nc
+cdo -sub ORCHIDEE_LGM_BAraw.nc ORCHIDEE_BA_1951_1970_baseline.nc ORCHIDEE_anomaly_baseline.nc
+rm ORCHIDEE_LGM_BA.nc ORCHIDEE_SF2_BA.nc ORCHIDEE_LGM_BAraw1.nc ORCHIDEE_LGM_BAstd.nc
+
+
+
+
