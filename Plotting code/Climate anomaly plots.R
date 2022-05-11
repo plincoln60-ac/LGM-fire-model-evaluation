@@ -11,18 +11,28 @@ library(rasterVis)
 library(ggplot2)
 library(rgdal) # package for geospatial analysis
 library(reshape2)
+library(ggpubr)
+library(RColorBrewer)
 ############## Load up mean BA models & convert to dfs -----
 PRECIP <- tidync("/Volumes/PL SSD/Fire models Jan 2021/LGM climate input/LGManomalies/Anomalies/PRECIP_mean.nc")
 PRECIP <- PRECIP %>% tidync::hyper_tibble(force = T)
-PRECIP$lon <- PRECIP$lon -180
+
+
+PRECIP <- PRECIP %>%
+  dplyr::mutate(lon = ifelse(lon > 180, lon - 360, lon))
+
 
 TEMP <- tidync("/Volumes/PL SSD/Fire models Jan 2021/LGM climate input/LGManomalies/Anomalies/Temp_mean.nc")
 TEMP <- TEMP %>% tidync::hyper_tibble(force = T)
-TEMP$lon <- TEMP$lon -180
+TEMP <- TEMP %>%
+  dplyr::mutate(lon = ifelse(lon > 180, lon - 360, lon))
+
 
 WIND <- tidync("/Volumes/PL SSD/Fire models Jan 2021/LGM climate input/LGManomalies/Anomalies/Wind_speed_mean.nc")
 WIND <- WIND %>% tidync::hyper_tibble(force = T)
-WIND$lon <- WIND$lon -180
+WIND <- WIND %>%
+  dplyr::mutate(lon = ifelse(lon > 180, lon - 360, lon))
+
 
 
 #LGM ice raster file
@@ -51,7 +61,6 @@ revblue <- brewer.pal('Blues', n = 9)
 
 myTheme <- rasterTheme(region = c(blues, zeroCol, reds))
 
-
 PRECIP_plot <- ggplot(data=PRECIP, aes(x=lon, y=lat)) +
   geom_tile(alpha = 0.9,aes(fill = pre_ltm)) + scale_fill_binned(low = revred ,high = revblue, breaks = c(cutpts), limits= c(-200,200)) +
   geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
@@ -70,6 +79,7 @@ PRECIP_plot <- PRECIP_plot + guides(fill=guide_legend(title="Precip anomaly (mm 
 PRECIP_plot<-ggarrange(PRECIP_plot,
           ncol = 1, nrow = 1, common.legend = T, legend = 'right')
 
+PRECIP_plot
 cutptst<- seq(-40,40, by=  5)
 
 Temp_plot <- ggplot(data=TEMP, aes(x=lon, y=lat)) +
@@ -114,5 +124,10 @@ Wind_plot <- Wind_plot + guides(fill=guide_legend(title="Wind anomaly (m s-1)"))
 
 Wind_plot<- ggarrange(Wind_plot,
           ncol = 1, nrow = 1, common.legend = T, legend = 'right')
+
+
+ggpubr::ggarrange(PRECIP_plot,Temp_plot,Wind_plot, legend = 'right')
+
+
 
 

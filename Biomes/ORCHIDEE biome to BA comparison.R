@@ -114,7 +114,7 @@ biome6kcolquant <- c('bare ground' = 'yellow2',
 #Upload LCF and BA data and reformat
 ORCHIDEELGMLCF <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/ORCHIDEE/ORCHIDEE_LGM_LCF.nc")
 ORCHIDEELCF <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/ORCHIDEE/SF2_LCF_1951_1970.nc")
-ORCHIDEEBAdiff <- tidync::tidync("/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Biomes/ORCHIDEE/ORCHIDEE_1951_1970_BA_diff.nc")
+ORCHIDEEBAdiff <- tidync::tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_anomaly_baseline_remap_mean.nc")
 ORCHIDEELGMLCF<-ORCLCFLGMfunction(ORCHIDEELGMLCF)
 ORCHIDEELCF<-ORCLCFLGMfunction(ORCHIDEELCF)
 ORCHIDEEBAdiff <- BAfunction(ORCHIDEEBAdiff)
