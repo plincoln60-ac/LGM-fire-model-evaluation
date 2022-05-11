@@ -8,9 +8,11 @@ cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SPITFIRE/SF2\ FLa/LPJ-GUESS-SPITFIRE
 
 cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SPITFIRE/
 
+cdo  -seltimestep,251/270 LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970_raw.nc 
 cdo timmean -seltimestep,251/270 LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970.nc 
 cdo timstd -seltimestep,251/270 LPJ-GUESS-SPITFIRE_LGM_Reference_BAannual.nc LPJ-GUESS-SPITFIRE_LGM_Reference_BA_1951_1970std.nc 
 
+cdo  -seltimestep,1/90 -timselsum,12 LPJ-GUESS-SPITFIRE_LGM_BA.nc LPJ-GUESS-SPITFIRE_LGM_BA1raw.nc 
 cdo timmean -seltimestep,1/90 -timselsum,12 LPJ-GUESS-SPITFIRE_LGM_BA.nc LPJ-GUESS-SPITFIRE_LGM_BA1.nc 
 cdo timstd -seltimestep,1/90 -timselsum,12 LPJ-GUESS-SPITFIRE_LGM_BA.nc LPJ-GUESS-SPITFIRE_LGM_BAstd1.nc 
 
@@ -202,6 +204,9 @@ cdo remapbil,ORCHIDEE.grd ORCHIDEE_LGM_BAstd.nc ORCHIDEE_LGM_BAstd1.nc
 
 #scale modern for land cover
 cdo mul ORCHIDEE_SF2_BA.nc scale_annual.nc ORCHIDEE_BA_1951_1970_scale1.nc
+
+cdo remapbil,SPITFIRE.grd LPJLM_1951_1970_BA_diff.nc LPJLM_1951_1970_BA_diff1.nc
+cdo remapbil,SPITFIRE.grd SIMFIRE_1951_1970_BA_diff.nc SIMFIRE_1951_1970_BA_diff1.nc
 
 
 #calculate difference

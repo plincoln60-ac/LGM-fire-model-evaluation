@@ -29,8 +29,12 @@ wd<-getwd()
 
 SAm_hpol <- readOGR(dsn = "/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Regional shapefiles/SAm_h.shp")
 SAm_lpol <- readOGR(dsn = "/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Regional shapefiles/SAm_l.shp")
+Af_hpol <- readOGR(dsn = "/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Regional shapefiles/Af_h.shp")
+Af_lpol <- readOGR(dsn = "/Users/paullincoln/Dropbox/2022/Research/LGM paper & new code/Regional shapefiles/Af_l.shp")
+SE_Asia <- readOGR(dsn = "/Users/paullincoln/Documents/GitHub/LGM-fire-model-evaluation/Polygon code/Regional shapefiles/SE_Asia.shp")
 Europe <- readOGR(dsn = "/Users/paullincoln/Documents/GitHub/LGM-fire-model-evaluation/Polygon code/Regional shapefiles/Europe.shp")
 Australia <-readOGR(dsn = "/Users/paullincoln/Documents/GitHub/LGM-fire-model-evaluation/Polygon code/Regional shapefiles/SE_Australia.shp")
+Global <- readOGR(dsn = "/Users/paullincoln/Documents/GitHub/LGM-fire-model-evaluation/Polygon code/Regional shapefiles/Globe.shp")
 #pick selected polygon to run
 
 ####################Create code into a function to run in multiples#################
@@ -89,7 +93,18 @@ LCFsp_function <- function(df, sp){
   df <- merge(df, dfmod_mean, by= 'concat')
   return(df)
 }
-
+killDbConnections <- function () {
+  
+  all_cons <- dbListConnections(MySQL())
+  
+  print(all_cons)
+  
+  for(con in all_cons)
+    +  dbDisconnect(con)
+  
+  print(paste(length(all_cons), " connections killed."))
+  
+}
 ###########load plotting data#############
 #LGM ice raster file
 p <- raster('/Volumes/PL SSD/Shapefiles/LGM mask/LGM mask2.tif')
@@ -200,6 +215,7 @@ region_plot_function<- function(pol, string){
     scale_fill_manual(values=c("FALSE"="red","TRUE"="blue"))+
     theme(axis.text.x=element_blank(), #remove x axis labels
           axis.ticks.x=element_blank(),
+          axis.text.y = element_text(angle = 45, hjust = 1, size = 8),
           legend.position="none") #remove x axis ticks
 
   LCF_model$fill <- LCF_model$meanLCF <0
@@ -208,6 +224,7 @@ region_plot_function<- function(pol, string){
     scale_fill_manual(values=c("FALSE"="red","TRUE"="blue"))+
     theme(axis.text.x=element_blank(), #remove x axis labels
           axis.ticks.x=element_blank(),
+          axis.text.y = element_text(angle = 45, hjust = 1, size = 6),
           legend.position="none") #remove x axis ticks
   
   map <- ggplot(data=BA_model, aes(x=lon, y=lat)) +
@@ -232,18 +249,150 @@ plot <- ggarrange(map, mod, RPD, LCF,
             legend = NULL)
 multimap <- annotate_figure(plot, top = text_grob(string, 
                                                   color = "black", face = "bold", size = 14))
-
+killDbConnections()
   
 return(multimap)
 
 }
   
+Globe_plot_function<- function(Global, string){
+  #upload raw data
+  SPITBA <-tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/November_21_new_references/SPITFIRE/LPJ-GUESS-SPITFIRE_BA_anomaly_baseline_mean.nc", var = 'BA')
+  SIMBA <- tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/November_21_new_references/SIMFIRE/LPJ-GUESS-BLAZE_BA_anomaly_baseline_remap_mean.nc", var = 'BA')
+  ORCBA <-tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_anomaly_baseline_remap_mean.nc", var = 'BA')
+  LMBA <- tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/November_21_new_references/LPJ LM/LPJLM_BA_anomaly_baseline_mean.nc", var = 'BA')
+  SPITLCF <- tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/By model for xy plots/SPITFIRE/SPITFIRE.nc")
+  SIMLCF <- tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/By model for xy plots/SIMFIRE/SIMFIRE.nc")
+  ORCLCF <- tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/By model for xy plots/ORCHIDEE/ORCHIDEE.nc")
+  LMLCF <- tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/By model for xy plots/LPJLM/LPJLM.nc")
+  
+  #write data to dfs
+  SPITBA <- BA_function(SPITBA, 'SPITFIRE') 
+  SPITLCF <- LCFfunction(SPITLCF, 'SPITFIRE') 
+  SIMBA <- BA_function(SIMBA, 'SIMFIRE') 
+  SIMLCF <- LCFfunction(SIMLCF, 'SIMFIRE') 
+  ORCBA <- BA_function(ORCBA, 'ORCHIDEE')
+  ORCLCF <- LCFfunction(ORCLCF, 'ORCHIDEE') 
+  LMBA <- BA_function(LMBA, 'LPJLM') 
+  LMLCF <- LCFfunction(LMLCF, 'LPJLM') 
+  #output dfs containing all cell values within the polygon
+  BAdat <- data.frame(rbind(SPITBA, SIMBA, ORCBA, LMBA))
+  LCFdat <- data.frame(rbind(SPITLCF,SIMLCF,ORCLCF,LMLCF))
+  
+  BA_model <- sp_function(BAdat, Global)
+  LCF_model <- LCFsp_function(LCFdat,Global)
+  
+  
+  #RPD entities----
+  #compile data from entities
+  ###gather entity data from RPD
+  mydb = dbConnect(MySQL(), user='root', password='Vedde12171', dbname='RPDv2 6.2.22', host='localhost')
+  dbListTables(mydb)
+  
+  ent <-  dbGetQuery(mydb, "select e.ID_ENTITY, e.entity_name, e.latitude as 'lat', e.longitude as 'lon', e.TYPE, count(am.mean), min(am.mean) from entity e
+                        left join sample s on s.ID_ENTITY = e.ID_ENTITY
+                        left join age_model am on am.ID_SAMPLE = s.ID_SAMPLE
+                        where am.mean between 17000 and 24000
+                        AND e.TYPE != 'other'
+                        group by e.ID_ENTITY;") 
+  ###make spatial point file
+  
+  xy <- ent[,c(4,3)]
+  spdf <- SpatialPointsDataFrame(coords = xy, data = ent[1:4],
+                                 proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+  
+  #filter which entities lie within the polygon
+  spdf <- data.frame(spdf[Global,])
+  spdf <- spdf[1:4]
+  #####upload RPD z scores
+ 
 
-region_plot_function(SAm_lpol, 'South America low dipole')
-region_plot_function(SAm_hpol, 'South America high dipole')
-region_plot_function(Australia, 'Australia')
-region_plot_function(Europe, 'Southern Europe')
+  LGMdf <- read.csv('/Users/paullincoln/Dropbox/2021/Research/RPD time series/Regional_transformed_data_EGU/LGM_dataset.csv')
+  #Subset data frame ----
+  LGMdf <-merge(spdf, LGMdf, by =c('ID_ENTITY'))
+  LGMdf <- LGMdf %>% filter(EST_AGE <24000 & EST_AGE >17000)
+  LGMdf <- LGMdf %>% filter(entity_name != 'Rio Rubens core')
+  zt <- na.omit(LGMdf$zt)
+  zt<-mean(zt)
+  #LGMdf <- LGMdf %>% filter(zt <10 & zt >-10)
+  LGMdf$meanBA <- zt
+  LGMdf$model <- 'RPD'
+  plotLGM <- LGMdf[c(3:4,12:14)]
+  colnames(plotLGM) <- c('lat','lon','BA','meanBA','model')
+  head(BA_model)
+  head(plotLGM)
+  
+  plotdf <-rbind(BA_model[c(1:4,6)],plotLGM)
+  #work out bounding box coordinates of polygon
+  boun <- data.frame(bbox(Global))
+  
+  pcoords<- as.data.frame(Global@polygons[[1]]@Polygons[[1]]@coords)
+  colnames(pcoords) <- c('lon','lat')
+  #plot
+  
+  
 
+  plotdf$fill <- plotdf$meanBA <0
+  plotdf$model <- factor( plotdf$model  , levels=c("LPJLM", "ORCHIDEE", "SPITFIRE", "SIMFIRE", "RPD")) #re=order boxplots
+  RPD <- ggplot(plotdf, aes(x=model, y=BA, fill = fill)) + 
+    geom_boxplot(outlier.shape = 4, outlier.size = 0.5) + ggpubr:: theme_pubr()+   ggpubr::labs_pubr(base_size = 10)+
+    geom_hline(yintercept = 0, color = 'red') +labs(title='Model BA anomaly') +
+    scale_fill_manual(values=c("FALSE"="red","TRUE"="blue"))+ scale_y_continuous(limits = c(-10,10)) +
+    theme() #remove x axis ticks
+  
+  ?geom_violin
+  
+  ggplot(plotdf, aes(x=model, y=BA, fill = fill, alpha = 0.5)) + 
+    geom_violin(stat= 'ydensity', width = 5) +
+    geom_boxplot(outlier.shape = NA, width = 0.1) + ggpubr:: theme_pubr()+   ggpubr::labs_pubr(base_size = 10)+
+    geom_hline(yintercept = 0, color = 'red') +labs(title='Model BA anomaly') +
+    scale_fill_manual(values=c("FALSE"="red","TRUE"="blue"))+ scale_y_continuous(limits = c(-10,10)) +
+    theme(axis.text.y = element_text(angle = 45, hjust = 1, size = 8),
+          legend.position="none") #remove x axis ticks
+  
+  map <- ggplot(data=BA_model, aes(x=lon, y=lat)) +
+    geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+    geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+    geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+    geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+    ggpubr:: theme_pubr()+   ggpubr::labs_pubr(base_size = 10)+ 
+    geom_point(data = spdf, aes(x = lon, y = lat), color = 'red') +
+    scale_x_continuous(limits = c(boun[1,1]-4.75, boun[1,2]+4.75),breaks = seq(-180, 180, 30)) + 
+    scale_y_continuous(limits = c(boun[2,1]-4.75, boun[2,2]+4.75), breaks = seq(-60, 90, 20))+
+    theme(axis.text.x=element_blank(), #remove x axis labels
+          axis.ticks.x=element_blank(), #remove x axis ticks
+          axis.text.y=element_blank(),  #remove y axis labels
+          axis.ticks.y=element_blank())+labs(title='Map')
+  
+ ?geom_boxplot 
+  
+  
+  plot <- ggarrange(map,  RPD,
+                    labels = c("A", "B"),
+                    ncol = 1, nrow = 2, 
+                    legend = NULL)
+  plot
+  multimap <- annotate_figure(plot, top = text_grob(string, 
+                                                    color = "black", face = "bold", size = 14))
+  killDbConnections()
+  
+  return(multimap)
+  
+} ###this is far from complete
+
+SAM<-region_plot_function(SAm_lpol, 'South America low dipole')
+SAMh <-region_plot_function(SAm_hpol, 'South America high dipole')
+AUS <-region_plot_function(Australia, 'Australia')
+EUR<-region_plot_function(Europe, 'Southern Europe')
+AfH<-region_plot_function(Af_hpol, 'Central African high dipole')
+AfL<-region_plot_function(Af_lpol, 'Central African low dipole')
+SEAS<-region_plot_function(SE_Asia, 'Equatorial SE Asia')
+Globe_plot_function(Global, 'Equatorial SE Asia')
+
+
+plot <- ggarrange(SAM, SAMh,
+                  ncol = 2, nrow = 1, 
+                  legend = NULL)
 
 
 
