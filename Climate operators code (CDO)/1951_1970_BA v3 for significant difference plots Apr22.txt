@@ -46,11 +46,11 @@ cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/LGM\ SF1/LPJ-GUESS-SIM
 
 cdo  -seltimestep,252/271 -timselsum,12 LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc 
 
-cdo -seltimestep,10/100 -timselsum,12 LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc LPJ-GUESS-BLAZE_LGM_BAraw.nc
+cdo -seltimestep,11/100 -timselsum,12 LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc LPJ-GUESS-BLAZE_LGM_BAraw.nc
 
 
-cdo -mul LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc scale_v2.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970raw.nc
-cdo -timmean LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc  LPJ-GUESS-BLAZE_v2_BA_1951_1970_baseline.nc
+cdo -mul LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc scalev2.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970raw.nc
+cdo -timmean LPJ-GUESS-BLAZE_v2_BA_1951_1970raw.nc  LPJ-GUESS-BLAZE_v2_BA_1951_1970_baseline.nc
 
 
 cdo -sub LPJ-GUESS-BLAZE_LGM_BAraw.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970raw.nc LPJ-GUESS-BLAZE_BA_anomaly_raw.nc
@@ -59,7 +59,7 @@ cdo timstd LPJ-GUESS-BLAZE_BA_anomaly_baseline.nc LPJ-GUESS-BLAZE_anomaly_baseli
 
 
 
-rm LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc
+rm LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc LPJ-GUESS-SIMFIRE_LGM_SF1_burntArea.nc LPJ-GUESS-BLAZE_v2_BA_1951_1970raw1.nc LPJ-GUESS-BLAZE_SF2_FLav2_BA.nc
 #cdo setrtomiss,100,10000000000000000 LPJ-GUESS-BLAZE_v1_scaled.nc LPJ-GUESS-BLAZE_v1_scaled1.nc
 
 
@@ -83,6 +83,7 @@ cdo  -mulc,100 -seltimestep,61/150 LPJLM_LGM_BA.nc LPJLM_BA_LGM_BAraw.nc
 
 cdo -sub LPJLM_BA_LGM_BAraw.nc LPJLM_BA_1951_1970_raw.nc LPJLM_BA_anomaly_raw.nc
 cdo -sub LPJLM_BA_LGM_BAraw.nc LPJLM_BA_1951_1970_baseline.nc LPJLM_BA_anomaly_baseline.nc
+cdo timstd LPJLM_BA_anomaly_baseline.nc LPJLM_BA_anomaly_baselinesd.nc
 
 
 rm LPJLM_BA.nc LPJLM_LGM_BA.nc
@@ -175,6 +176,8 @@ cdo remapbil,ORCHIDEE.grd ORCHIDEE_LGM_BAraw1.nc ORCHIDEE_LGM_BAraw.nc
 
 cdo -sub ORCHIDEE_LGM_BAraw.nc ORCHIDEE_BA_1951_1970_raw.nc LPJLM_BA_anomaly_raw.nc
 cdo -sub ORCHIDEE_LGM_BAraw.nc ORCHIDEE_BA_1951_1970_baseline.nc ORCHIDEE_anomaly_baseline.nc
+cdo timstd ORCHIDEE_anomaly_baseline.nc ORCHIDEE_anomaly_baselinesd.nc
+
 rm ORCHIDEE_LGM_BA.nc ORCHIDEE_SF2_BA.nc ORCHIDEE_LGM_BAraw1.nc ORCHIDEE_LGM_BAstd.nc
 
 

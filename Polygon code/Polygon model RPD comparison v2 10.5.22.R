@@ -66,7 +66,7 @@ sp_function <- function(df, sp){
   df <- df %>% filter(df[5] == 'TRUE')
   mod_mean <- df %>%
     group_by(model) %>%
-    summarise_at(vars(BA), list(name = mean))
+    dplyr:: summarise_at(vars(BA), list(name = mean))
   colnames(mod_mean) <- c('model', 'meanBA')
   df <- merge(df, mod_mean, by= 'model')
   return(df)
@@ -120,7 +120,7 @@ unzip(zipfile = "coastlines.zip",
 coastlines <- readOGR("ne-coastlines-10m/ne_10m_coastline.shp")
 coastlines <- SpatialLinesDataFrame(coastlines,
                                     coastlines@data)
-
+pol <- Australia
 region_plot_function<- function(pol, string){
   #upload raw data
   SPITBA <-tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/BA/Model means/SPITFIRE_1951_1970_BA_diff.nc", var = 'BA')
@@ -132,7 +132,7 @@ region_plot_function<- function(pol, string){
   ORCLCF <- tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/By model for xy plots/ORCHIDEE/ORCHIDEE.nc")
   LMLCF <- tidync("/Users/paullincoln/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/By model for xy plots/LPJLM/LPJLM.nc")
 
-  #write data to dfs
+    #write data to dfs
   SPITBA <- BA_function(SPITBA, 'SPITFIRE') 
   SPITLCF <- LCFfunction(SPITLCF, 'SPITFIRE') 
   SIMBA <- BA_function(SIMBA, 'SIMFIRE') 

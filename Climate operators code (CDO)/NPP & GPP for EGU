@@ -1,0 +1,102 @@
+
+#######################SIMFIRE#############################################################################
+###########################################################################################################
+
+#aim here is to calculate simple gpp anomaly to compare gpp to BA. Note that this is not scaled for pfts
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/LGM\ SF1/LPJ-GUESS-SIMFIRE_LGM_SF1_gpp.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SIMFIRE/LGM_gpp1.nc
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SIMFIRE-BLAZE/v2\ FLa/LPJ-GUESS-BLAZE_SF2_FLa_gpp.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SIMFIRE/SF2_gpp.nc
+cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SIMFIRE/
+
+cdo -timmean -timselsum,12 -mulc,30 -mulc,86400  -seltimestep,13/252 SF2_gpp.nc  SF2_gpp_mean.nc
+cdo -timselsum,12 -mulc,30 -mulc,86400  -seltimestep,121/1200 LGM_gpp1.nc LGM_gpp.nc
+cdo -timmean -sub LGM_gpp.nc SF2_gpp_mean.nc SIMFIRE_gpp_anomaly_baseline.nc
+#convert seconds to day & then month (note that a constant 30 day month is used here)
+rm SF2_gpp.nc LGM_gpp1.nc
+
+cdo remapbil,SPITFIRE.grd SIMFIRE_gpp_anomaly_baseline.nc SIMFIRE_gpp_anomaly_baseline_remap.nc
+#######################ORCHIDEE#############################################################################
+############################################################################################################
+
+
+cd /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/ORCHIDEE/SF2\ LCC
+
+tar -xzvf gpppft.tar.gz
+cd ./gpppft
+rm gpppft_2*.nc gpppft_198*.nc gpppft_199*.nc gpppft_1950.nc gpppft_1971.nc gpppft_1972.nc gpppft_1973.nc gpppft_1974.nc gpppft_1975.nc gpppft_1976.nc gpppft_1977.nc gpppft_1978.nc gpppft_1979.nc
+
+cdo mergetime *.nc SF2_gpppft.nc 
+rm gpppft_*.nc
+cp ./SF2_gpppft.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/SF2_gpppft.nc
+cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/
+########Scale
+cdo timselsum,12 -mulc,30 -mulc,86400  -seltimestep,1/240 SF2_gpppft.nc  SF2_gpppft_mean.nc
+rm SF2_gpppft.nc
+cdo -mul -sellevel,1 SF2_gpppft_mean.nc scale.nc pft1.nc
+cdo -mul -sellevel,2 SF2_gpppft_mean.nc scale.nc pft2.nc
+cdo -mul -sellevel,3 SF2_gpppft_mean.nc scale.nc pft3.nc
+cdo -mul -sellevel,4 SF2_gpppft_mean.nc scale.nc pft4.nc
+cdo -mul -sellevel,5 SF2_gpppft_mean.nc scale.nc pft5.nc
+cdo -mul -sellevel,6 SF2_gpppft_mean.nc scale.nc pft6.nc
+cdo -mul -sellevel,7 SF2_gpppft_mean.nc scale.nc pft7.nc
+cdo -mul -sellevel,8 SF2_gpppft_mean.nc scale.nc pft8.nc
+cdo -mul -sellevel,9 SF2_gpppft_mean.nc scale.nc pft9.nc
+cdo -mul -sellevel,10 SF2_gpppft_mean.nc scale.nc pft10.nc
+cdo -mul -sellevel,11 SF2_gpppft_mean.nc scale.nc pft11.nc
+
+cdo merge pft1.nc pft2.nc pft3.nc pft4.nc pft5.nc pft6.nc pft7.nc pft8.nc pft9.nc pft10.nc pft11.nc SF2_gpppft_scaled.nc
+cdo timmean SF2_gpppft_scaled.nc SF2_gpppft_baseline_scaled.nc 
+cdo vertsum SF2_gpppft_baseline_scaled.nc  SF2_gpp_baseline_scaled.nc 
+
+rm pft1.nc pft2.nc pft3.nc pft4.nc pft5.nc pft6.nc pft7.nc pft8.nc pft9.nc pft10.nc pft11.nc SF2_gpppft_scaled.nc
+
+
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/ORCHIDEE/Georeffed/ORCHIDEE_LGM_gpppft_May22.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/ORCHIDEE/ORCHIDEE_LGM_gpppft_May22.nc
+
+cdo -vertsum -timselsum,12 -mulc,30 -mulc,86400 -seltimestep,121/1200  ORCHIDEE_LGM_gpppft_May22.nc ORCHIDEE_LGM_gpppft_annual.nc
+cdo -vertsum ORCHIDEE_LGM_gpppft_annual.nc ORCHIDEE_LGM_gpp_annual1.nc
+cdo remapbil,ORCHIDEE.grd ORCHIDEE_LGM_gpp_annual1.nc ORCHIDEE_LGM_gpp_annual.nc
+cdo -timmean -sub  ORCHIDEE_LGM_gpp_annual.nc SF2_gpp_baseline_scaled.nc ORCHIDEE_gpp_anomaly_baseline.nc
+
+
+
+#######################LPJLM################################################################################
+############################################################################################################
+#LPJLM only has GPP for the modern. Therefore NPP is used as a surrogate
+cd /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/LPJLMfire
+cdo -timmean -seltimestep,252/271 -selvar,NPP FireMIP_1700_2013.nc SF2_NPP.nc
+cdo  -selvar,NPP FireMIP_natural.nc NPP.nc
+cdo  -seltimestep,51/150 NPP.nc LGM_NPP.nc
+
+
+cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/LPJ\ LM/
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/LPJLMfire/SF2_NPP.nc ./SF2_NPP_baseline.nc
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/LPJLMfire/LGM_NPP.nc ./LGM_NPP.nc
+cdo -timmean -sub LGM_NPP.nc SF2_NPP_baseline.nc npp.nc
+cdo -divc,1000 npp.nc LPJLM_npp_anomaly_baseline.nc
+rm npp.nc
+
+#######################SPITFIRE#############################################################################
+############################################################################################################
+cd /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SPITFIRE
+
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SPITFIRE/LGM\ SF1/LPJ-GUESS-SPITFIRE_LGM_gpp.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SPITFIRE/LPJ-GUESS-SPITFIRE_LGM_gpp.nc
+cp /Volumes/PL\ SSD/Fire\ models\ Jan\ 2021/SPITFIRE/SF2\ FLa/LPJ-GUESS-SPITFIRE_LGM_Reference_gpp.nc /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SPITFIRE/LPJ-GUESS-SPITFIRE_LGM_Reference_gpp.nc
+cd /Users/paullincoln/Dropbox/2021/Research/RPD\ LGM\ for\ model\ comparison/November_21_new_references/SPITFIRE/
+
+cdo  -seltimestep,3001/3240 LPJ-GUESS-SPITFIRE_LGM_Reference_gpp.nc SF2.nc
+cdo  -timselsum,12 SF2.nc SF2a.nc
+cdo -timmean -mulc,2592000 SF2a.nc SF2_gpp_baseline.nc
+rm SF2.nc SF2a.nc 
+
+cdo -seltimestep,1/1080 LPJ-GUESS-SPITFIRE_LGM_gpp.nc LGM.nc
+cdo  -timselsum,12 LGM.nc LGMa.nc
+cdo  -mulc,2592000 LGMa.nc LGM_gpp.nc
+
+cdo remapbil,SPITFIRE.grd LGM_gpp.nc SPITFIRE_gpp.nc
+
+rm LGM.nc LGMa.nc LGM_gpp.nc
+
+cdo -timmean -sub SPITFIRE_gpp.nc SF2_gpp_baseline.nc SPITFIRE_gpp_anomaly_baseline.nc
+
+
+

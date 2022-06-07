@@ -137,11 +137,12 @@ ORC_LPJLM<-ttest_function(ORCraw,LPJraw,ORC,ORCLMcells)
 ORC_LPJLM$model <- 'ORC_LPJLM'
 
 df <-rbind(SPIT_LPJLM,SPIT_ORC,ORC_LPJLM[c(1:12,15)])
+df$meanBA_diff <- df$mod_mean1 - df$mod_mean2 
 df <- df%>% dplyr::mutate(significance = dplyr::case_when(
+  meanBA_diff < 1 & meanBA_diff > -1 ~'difference <1%',
   p < 0.05 ~'p <0.05',
   p >= 0.05 ~'p >0.05'))
 
-df$meanBA_diff <- df$mod_mean1 - df$mod_mean2 
 
 #LGM ice raster file
 p <- raster('/Volumes/PL SSD/Shapefiles/LGM mask/LGM mask2.tif')
@@ -160,7 +161,7 @@ coastlines <- SpatialLinesDataFrame(coastlines,
 
 
 
-fill <- c('p >0.05' = "green", 'p <0.05' = 'red')
+fill <- c('p >0.05' = "green", 'p <0.05' = 'red', 'difference <1%' = 'lightgrey')
 
 ggplot(data=df, aes(x=lon, y=lat)) +
   geom_tile(alpha = 0.9,aes(fill = significance))   + scale_fill_manual(values = fill) +
@@ -171,7 +172,7 @@ ggplot(data=df, aes(x=lon, y=lat)) +
   theme(axis.text.x=element_blank(), #remove x axis labels
         axis.ticks.x=element_blank(), #remove x axis ticks
         axis.text.y=element_blank(),  #remove y axis labels
-        axis.ticks.y=element_blank()) + facet_wrap(~model,nrow=3) + ggtitle('Baseline t-test comparison')
+        axis.ticks.y=element_blank()) + facet_wrap(~model,nrow=3) + ggtitle('SF1 Baseline t-test comparison')
 
 
 
@@ -193,6 +194,6 @@ BAanom <- ggplot(data=df, aes(x=lon, y=lat)) +
         axis.ticks.x=element_blank(), #remove x axis ticks
         axis.text.y=element_blank(),  #remove y axis labels
         axis.ticks.y=element_blank()) + facet_wrap(~model,nrow=3) + ggtitle('Model mean BA difference (%)')
-
+BAanom
 ggpubr::ggarrange(BAanom, legend = 'right')
 

@@ -124,28 +124,6 @@ ttest_function<- function(df,df2, df3, cellnum) {
 }
 
 
-ttest_function3<- function(df,df2, df3, cellnum) {
-  #create list from a dataframe to speed up loop
-  r <- rbind(df,df2)
-  r<- r %>% filter(r$cell %in% cellnum) 
-  r <- split(r[c(3:5)],f = factor(r$cell))
-  #set up list to write ttest values to
-  require(svMisc)
-  for(i in 1:length(cellnum)) {
-    progress(i, nrow(df3))
-    tryCatch({
-      num <- i
-      r3 <- data.frame(r[i])
-      colnames(r3) <- c('BA','cell','model')
-      tt <- t.test(BA~model, r3, mu =0, alt = 'two.sided', conf = 0.95, var.eq = F, paired = F)
-      c <-unique(r3$cell)
-      num2<- which(df3$cell == num)
-      df3$LPJLM_t[num2] <- tt$statistic
-      df3$LPJLM_p[num2] <- tt$p.value
-    }, error=function(e){cat("ERROR :")})
-  }
-  return(df3)
-}
 
 SPIT_LPJLM <- ttest_function(SPITraw,LPJraw,SPIT,SPITLMcells)
 SPIT_LPJLM$model <- 'SPIT_LPJLM'
@@ -162,9 +140,13 @@ ORC_LPJLM$model <- 'ORC_LPJLM'
 head(ORC_LPJLM)
 head(SIM_LPJLM)
 df <-rbind(SPIT_LPJLM,SPIT_ORC,SPIT_SIM,SIM_ORC,SIM_LPJLM,ORC_LPJLM[c(1:12,15)])
+df$meanBA_diff <- df$mod_mean1 - df$mod_mean2 
 df <- df%>% dplyr::mutate(significance = dplyr::case_when(
+  meanBA_diff < 1 & meanBA_diff > -1 ~'difference <1%',
   p < 0.05 ~'p <0.05',
   p >= 0.05 ~'p >0.05'))
+
+
 #LGM ice raster file
 p <- raster('/Volumes/PL SSD/Shapefiles/LGM mask/LGM mask2.tif')
 p[p==1] <- 'ice'
@@ -182,7 +164,7 @@ coastlines <- SpatialLinesDataFrame(coastlines,
 
 
 
-fill <- c('p >0.05' = "green", 'p <0.05' = 'red')
+fill <- c('p >0.05' = "green", 'p <0.05' = 'red', 'difference <1%' = 'lightgrey')
 
 ggplot(data=df, aes(x=lon, y=lat)) +
   geom_tile(alpha = 0.9,aes(fill = significance))   + scale_fill_manual(values = fill) +
@@ -196,9 +178,31 @@ ggplot(data=df, aes(x=lon, y=lat)) +
   theme(axis.text.x=element_blank(), #remove x axis labels
         axis.ticks.x=element_blank(), #remove x axis ticks
         axis.text.y=element_blank(),  #remove y axis labels
-        axis.ticks.y=element_blank()) + facet_wrap(~model,nrow=3)
+        axis.ticks.y=element_blank()) + facet_wrap(~model,nrow=3) + ggtitle('Model anomaly t-test comparison')
 
 
 
 
 
+zeroCol <-"#FFFFFF" # (gray color, same as your figure example)
+reds <- RColorBrewer:: brewer.pal('YlOrRd', n = 9)
+blues <- rev(RColorBrewer::brewer.pal('Blues', n = 9))
+revblue <-RColorBrewer:: brewer.pal('Blues', n = 9)
+cutpts<- seq(-80,80, by=  10)
+
+BAanom <- ggplot(data=df, aes(x=lon, y=lat)) +
+  geom_tile(alpha = 0.9,aes(fill = meanBA_diff)) + scale_fill_binned(low = blues ,high = reds, breaks = c(cutpts), limits= c(-80,80)) +
+  geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
+  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
+  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
+  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
+  ggpubr:: theme_pubr()+   ggpubr::labs_pubr(base_size = 12)+ 
+  scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
+  scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) + facet_wrap(~model,nrow=3) + ggtitle('Model mean BA difference (%)')
+
+ggpubr::ggarrange(BAanom, legend = 'right')
+?ggtitle

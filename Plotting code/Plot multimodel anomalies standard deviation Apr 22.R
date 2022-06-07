@@ -43,6 +43,48 @@ colnames(LMBA) <- c("LMBA", "LMBA_sd", "lon", "lat", "time")
 LMBA <- LMBA[,1:4]
 LMBA$LMmin <- LMBA$LMBA - LMBA$LMBA_sd
 LMBA$LMmax <- LMBA$LMBA + LMBA$LMBA_sd
+
+stat_function <- function(df){
+  colnames(df) <- 'value'
+  m<-mean(df$value)
+  s <- sd(df$value)
+  l <- as.list(c(m,s))
+  return(l)
+}
+quantitative_stat_function<-function(df, model) {
+  region <- c('Globe', 'Tropics', 'Northern_Extratropics', 'Southern_Extratropics')
+  mean <- c('NA','NA','NA','NA')
+  sd <- c('NA','NA','NA','NA')
+  model <- (model)
+  df3 <- data.frame(region, mean, sd, model)
+  globe <- stat_function(df[1])
+  tropic <- df %>% filter(lat > -30 & lat < 30)
+  t_stat<- stat_function(tropic[1])
+  N_extrop <-  df %>% filter(lat > 30)
+  n_ex_stat <- stat_function(N_extrop[1])
+  S_extrop <- df %>% filter(lat < -30)
+  s_ex_stat <- stat_function(S_extrop[1])
+  df3$mean[1] <-globe[1] 
+  df3$sd[1] <- globe[2]
+  df3$mean[2] <- t_stat[1]
+  df3$sd[2] <- t_stat[2]
+  df3$mean[3] <- n_ex_stat[1]
+  df3$sd[3] <- n_ex_stat[2]
+  df3$mean[4] <- s_ex_stat[1]
+  df3$sd[4] <- s_ex_stat[2]
+  return(df3)
+}
+
+LPJLM_summary <-quantitative_stat_function(LMBA, 'LPJLM') 
+ORCHIDEE_summary <-quantitative_stat_function(ORCBA, 'ORCHIDEE')
+SPITFIRE_summary <-quantitative_stat_function(SPITBA, 'SPITFIRE')
+SIMFIRE_summary <-quantitative_stat_function(SIMBA, 'SIMFIRE')
+
+Mod_summary <-rbind(SPITFIRE_summary,SIMFIRE_summary,ORCHIDEE_summary,LPJLM_summary)
+write.csv(Mod_summary, "/Users/paullincoln/Dropbox/2022/Research/Model_BA_summary.csv")
+
+
+
 ###write dimensions
 LGM <- nc_open("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/BA/Model means/1951_1970_mean_BA.nc")
 
