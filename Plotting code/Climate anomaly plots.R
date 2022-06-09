@@ -64,9 +64,6 @@ myTheme <- rasterTheme(region = c(blues, zeroCol, reds))
 PRECIP_plot <- ggplot(data=PRECIP, aes(x=lon, y=lat)) +
   geom_tile(alpha = 0.9,aes(fill = pre_ltm)) + scale_fill_binned(low = revred ,high = revblue, breaks = c(cutpts), limits= c(-200,200)) +
   geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
-  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
-  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
-  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
   theme_pubr()+ labs_pubr(base_size = 12)+ 
   scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
   scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
@@ -80,14 +77,12 @@ PRECIP_plot<-ggarrange(PRECIP_plot,
           ncol = 1, nrow = 1, common.legend = T, legend = 'right')
 
 PRECIP_plot
+
 cutptst<- seq(-40,40, by=  5)
 
 Temp_plot <- ggplot(data=TEMP, aes(x=lon, y=lat)) +
   geom_tile(alpha = 0.9,aes(fill = tas_ltm)) + scale_fill_binned(low = blues ,high = reds, breaks = c(cutptst), limits= c(-40,40)) +
   geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
-  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
-  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
-  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
   theme_pubr()+ labs_pubr(base_size = 12)+ 
   scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
   scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
@@ -101,7 +96,7 @@ Temp_plot <- Temp_plot + guides(fill=guide_legend(title="Temp anomaly (deg C)"))
 Temp_plot<- ggarrange(Temp_plot,
           ncol = 1, nrow = 1, common.legend = T, legend = 'right')
 
-
+Temp_plot
 
 cutptw<- rev(seq(-10,10, by=  1))
 
@@ -109,9 +104,6 @@ cutptw<- rev(seq(-10,10, by=  1))
 Wind_plot <- ggplot(data=WIND, aes(x=lon, y=lat)) +
   geom_tile(alpha = 0.9,aes(fill = wspd_ltm)) + scale_fill_binned(low = blues ,high = reds, breaks = c(cutptw), limits= c(-10,10)) +
   geom_path(data = coastlines,  aes(x=long, y=lat, group = group), size = 0.25, color = 'black') +
-  geom_tile(data = dfp2, aes(x=lon,y=lat, fill=ice), fill = 'slategray1')+
-  geom_tile(data=dfp2, alpha = 0.0, color = "black", size = 0.5, linejoin = "round") +
-  geom_tile(data=dfp2, alpha = 1, aes(fill = ice),fill = 'slategray1' ) +
   theme_pubr()+ labs_pubr(base_size = 12)+ 
   scale_x_continuous(limits = c(-180, 180),breaks = seq(-180, 180, 30)) + 
   scale_y_continuous(limits = c(-60, 84), breaks = seq(-60, 90, 20))+
@@ -125,8 +117,9 @@ Wind_plot <- Wind_plot + guides(fill=guide_legend(title="Wind anomaly (m s-1)"))
 Wind_plot<- ggarrange(Wind_plot,
           ncol = 1, nrow = 1, common.legend = T, legend = 'right')
 
+Wind_plot
 
-ggpubr::ggarrange(PRECIP_plot,Temp_plot,Wind_plot, legend = 'right')
+ggpubr::ggarrange(PRECIP_plot,Temp_plot,Wind_plot,ncol=1, legend = 'right')
 
 
 
