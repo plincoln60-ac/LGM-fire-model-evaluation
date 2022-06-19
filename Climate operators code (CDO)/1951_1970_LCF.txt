@@ -596,3 +596,5 @@ cdo merge *.nc Boreal.nc
 cdo remapbil,SPITFIRE.grd Boreal.nc Boreal1.nc
 
 
+
+cdo -mul mask_ocean.nc GFED4_BA_remap.nc GFED4_BA_remap_mask.nc

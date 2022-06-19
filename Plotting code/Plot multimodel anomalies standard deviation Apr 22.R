@@ -18,9 +18,12 @@ library(ggpattern)
 ############## Load up mean BA models & convert to dfs -----
 
 SPITBA <-tidync("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/Apr22 for agreement plots/SPITFIRE_1951_1970_BA_diff.nc")
+SPITBAras <- raster('~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/Apr22 for agreement plots/SPITFIRE_1951_1970_BA_diff.nc', var = 'BA')
 SIMBA <- tidync("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/Apr22 for agreement plots/SIMFIRE_1951_1970_BA_diff.nc")
 ORCBA <-tidync("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/Apr22 for agreement plots/ORCHIDEE_1951_1970_BA_diff.nc")
 LMBA <- tidync("~/Dropbox/2021/Research/RPD LGM for model comparison/1951_1970_reference/Apr22 for agreement plots/LPJLM_1951_1970_BA_diff.nc")
+
+
 
 
 SPITBA <- SPITBA %>% hyper_tibble(force = T)

@@ -1,0 +1,214 @@
+################################SPITFIRE################################
+########################################################################
+cd /Users/paullincoln/Dropbox/2022/Research/LGM paper\ &\ new\ code/Biomes/SPITFIRE/ #doesn\t work but this is where the file is
+cdo vertsum SPITFIRE_LCF_1951_1970.nc sum.nc
+
+cdo -sellevel,1 SPITFIRE_LCF_1951_1970.nc 1.nc
+cdo -div 1.nc sum.nc pft1.nc
+cdo -sellevel,2 SPITFIRE_LCF_1951_1970.nc 2.nc
+cdo -div 2.nc sum.nc pft2.nc
+cdo -sellevel,3 SPITFIRE_LCF_1951_1970.nc 3.nc
+cdo -div 3.nc sum.nc pft3.nc
+cdo -sellevel,4 SPITFIRE_LCF_1951_1970.nc 4.nc
+cdo -div 4.nc sum.nc pft4.nc
+cdo -sellevel,5 SPITFIRE_LCF_1951_1970.nc 5.nc
+cdo -div 5.nc sum.nc pft5.nc
+cdo -sellevel,6 SPITFIRE_LCF_1951_1970.nc 6.nc
+cdo -div 6.nc sum.nc pft6.nc
+cdo -sellevel,7 SPITFIRE_LCF_1951_1970.nc 7.nc
+cdo -div 7.nc sum.nc pft7.nc
+cdo -sellevel,8 SPITFIRE_LCF_1951_1970.nc 8.nc
+cdo -div 8.nc sum.nc pft8.nc
+cdo -sellevel,9 SPITFIRE_LCF_1951_1970.nc 9.nc
+cdo -div 9.nc sum.nc pft9.nc
+cdo -sellevel,10 SPITFIRE_LCF_1951_1970.nc 10.nc
+cdo -div 10.nc sum.nc pft10.nc
+cdo -sellevel,11 SPITFIRE_LCF_1951_1970.nc 11.nc
+cdo -div 11.nc sum.nc pft11.nc
+cdo -sellevel,12 SPITFIRE_LCF_1951_1970.nc 12.nc
+cdo -div 12.nc sum.nc pft12.nc
+
+cdo -L -merge -setlevel,1 pft1.nc -setlevel,2 pft2.nc -setlevel,3 pft3.nc -setlevel,4 pft4.nc -setlevel,5 pft5.nc -setlevel,6 pft6.nc -setlevel,7 pft7.nc -setlevel,8 pft8.nc -setlevel,9 pft9.nc -setlevel,10 pft10.nc -setlevel,11 pft11.nc -setlevel,12 pft12.nc SPITFIRE_LCF_1951_1970_normalised1.nc
+
+rm pft*.nc 1.nc 2.nc 3.nc 4.nc 5.nc 6.nc 7.nc 8.nc 9.nc 10.nc 11.nc 12.nc
+
+cdo vertsum SPITFIRE_LGM_LCF.nc sum.nc
+
+cdo -sellevel,1 SPITFIRE_LGM_LCF.nc 1.nc
+cdo -div 1.nc sum.nc pft1.nc
+cdo -sellevel,2 SPITFIRE_LGM_LCF.nc 2.nc
+cdo -div 2.nc sum.nc pft2.nc
+cdo -sellevel,3 SPITFIRE_LGM_LCF.nc 3.nc
+cdo -div 3.nc sum.nc pft3.nc
+cdo -sellevel,4 SPITFIRE_LGM_LCF.nc 4.nc
+cdo -div 4.nc sum.nc pft4.nc
+cdo -sellevel,5 SPITFIRE_LGM_LCF.nc 5.nc
+cdo -div 5.nc sum.nc pft5.nc
+cdo -sellevel,6 SPITFIRE_LGM_LCF.nc 6.nc
+cdo -div 6.nc sum.nc pft6.nc
+cdo -sellevel,7 SPITFIRE_LGM_LCF.nc 7.nc
+cdo -div 7.nc sum.nc pft7.nc
+cdo -sellevel,8 SPITFIRE_LGM_LCF.nc 8.nc
+cdo -div 8.nc sum.nc pft8.nc
+cdo -sellevel,9 SPITFIRE_LGM_LCF.nc 9.nc
+cdo -div 9.nc sum.nc pft9.nc
+cdo -sellevel,10 SPITFIRE_LGM_LCF.nc 10.nc
+cdo -div 10.nc sum.nc pft10.nc
+cdo -sellevel,11 SPITFIRE_LGM_LCF.nc 11.nc
+cdo -div 11.nc sum.nc pft11.nc
+cdo -sellevel,12 SPITFIRE_LGM_LCF.nc 12.nc
+cdo -div 12.nc sum.nc pft12.nc
+cdo -L -merge -setlevel,1 pft1.nc -setlevel,2 pft2.nc -setlevel,3 pft3.nc -setlevel,4 pft4.nc -setlevel,5 pft5.nc -setlevel,6 pft6.nc -setlevel,7 pft7.nc -setlevel,8 pft8.nc -setlevel,9 pft9.nc -setlevel,10 pft10.nc -setlevel,11 pft11.nc -setlevel,12 pft12.nc SPITFIRE_LCF_LGM_normalised.nc
+cdo vertsum SPITFIRE_LCF_LGM_normalised.nc nsum.nc
+
+cdo remapbil,SPITFIRE.grd SPITFIRE_LCF_1951_1970_normalised1.nc SPITFIRE_LCF_1951_1970_normalised.nc 
+rm pft*.nc 1.nc 2.nc 3.nc 4.nc 5.nc 6.nc 7.nc 8.nc 9.nc 10.nc 11.nc 12.nc SPITFIRE_LCF_1951_1970_normalised1.nc
+
+cdo sub SPITFIRE_LCF_LGM_normalised.nc SPITFIRE_LCF_1951_1970_normalised.nc SPITFIRE_LCF_diff_normalised.nc
+
+###veg cover 
+cdo -vertsum -sellevel,1/10 SPITFIRE_LCF_diff_normalised.nc T.nc
+cdo chname,landCoverFrac,Treesfrac T.nc Trees.nc
+cdo vertsum -sellevel,11/12 SPITFIRE_LCF_diff_normalised.nc G.nc
+cdo chname,landCoverFrac,Grassfrac G.nc Grass.nc
+cdo vertsum -sellevel,1/12 SPITFIRE_LCF_diff_normalised.nc Tv.nc
+cdo chname,landCoverFrac,Totvegfrac Tv.nc Totveg.nc
+
+cdo -L -merge Totveg.nc Grass.nc Trees.nc SPITFIRE_veg_type_diff_normalised.nc
+rm Trees.nc Grass.nc Totveg.nc T.nc G.nc Tv.nc
+
+################################SIMFIRE################################
+########################################################################
+cd /Users/paullincoln/Dropbox/2022/Research/LGM paper\ &\ new\ code/Biomes/SIMFIRE/ #doesn\t work but this is where the file is
+
+cdo vertsum SIMFIRE_LCF_remap.nc sum.nc
+
+
+cdo -sellevel,1 SIMFIRE_LCF_remap.nc 1.nc
+cdo -div 1.nc sum.nc pft1.nc
+cdo -sellevel,2 SIMFIRE_LCF_remap.nc 2.nc
+cdo -div 2.nc sum.nc pft2.nc
+cdo -sellevel,3 SIMFIRE_LCF_remap.nc 3.nc
+cdo -div 3.nc sum.nc pft3.nc
+cdo -sellevel,4 SIMFIRE_LCF_remap.nc 4.nc
+cdo -div 4.nc sum.nc pft4.nc
+cdo -sellevel,5 SIMFIRE_LCF_remap.nc 5.nc
+cdo -div 5.nc sum.nc pft5.nc
+cdo -sellevel,6 SIMFIRE_LCF_remap.nc 6.nc
+cdo -div 6.nc sum.nc pft6.nc
+cdo -sellevel,7 SIMFIRE_LCF_remap.nc 7.nc
+cdo -div 7.nc sum.nc pft7.nc
+cdo -sellevel,8 SIMFIRE_LCF_remap.nc 8.nc
+cdo -div 8.nc sum.nc pft8.nc
+cdo -sellevel,9 SIMFIRE_LCF_remap.nc 9.nc
+cdo -div 9.nc sum.nc pft9.nc
+cdo -sellevel,10 SIMFIRE_LCF_remap.nc 10.nc
+cdo -div 10.nc sum.nc pft10.nc
+cdo -sellevel,11 SIMFIRE_LCF_remap.nc 11.nc
+cdo -div 11.nc sum.nc pft11.nc
+
+
+cdo -L -merge -setlevel,1 pft1.nc -setlevel,2 pft2.nc -setlevel,3 pft3.nc -setlevel,4 pft4.nc -setlevel,5 pft5.nc -setlevel,6 pft6.nc -setlevel,7 pft7.nc -setlevel,8 pft8.nc -setlevel,9 pft9.nc -setlevel,10 pft10.nc -setlevel,11 pft11.nc SIMFIRE_LCF_1951_1970_normalised.nc
+cdo vertsum SIMFIRE_LCF_1951_1970_normalised.nc nsum.nc
+rm pft*.nc 1.nc 2.nc 3.nc 4.nc 5.nc 6.nc 7.nc 8.nc 9.nc 10.nc 11.nc 12.nc nsum.nc
+
+cdo sellevel,1/11 SIMFIRE_LGM_LCF_remap.nc S_LCF.nc
+cdo sub S_LCF.nc SIMFIRE_LCF_1951_1970_normalised.nc SIMFIRE_LCF_diff_normalised.nc 
+rm S_LCF.nc
+
+###veg cover 
+cdo -vertsum -sellevel,1/9 SIMFIRE_LCF_diff_normalised.nc T.nc
+cdo chname,landCoverFrac,Treesfrac T.nc Trees.nc
+cdo vertsum -sellevel,10/11 SIMFIRE_LCF_diff_normalised.nc G.nc
+cdo chname,landCoverFrac,Grassfrac G.nc Grass.nc
+cdo vertsum -sellevel,1/11 SIMFIRE_LCF_diff_normalised.nc Tv.nc
+cdo chname,landCoverFrac,Totvegfrac Tv.nc Totveg.nc
+
+cdo -L -merge Totveg.nc Grass.nc Trees.nc SIMFIREveg_type_diff_normalised.nc
+rm Trees.nc Grass.nc Totveg.nc T.nc G.nc Tv.nc
+
+
+
+################################ORCHIDEE################################
+########################################################################
+
+cd /Users/paullincoln/Dropbox/2022/Research/LGM paper\ &\ new\ code/Biomes/ORCHIDEE/ #doesn\t work but this is where the file is
+cdo -vertsum -sellevel,2/11 SF2_LCF_1951_1970.nc sum.nc
+cdo -sellevel,1 SF2_LCF_1951_1970.nc 2.nc
+cdo -sellevel,2 SF2_LCF_1951_1970.nc 3.nc
+cdo -sellevel,3 SF2_LCF_1951_1970.nc 4.nc
+cdo -sellevel,4 SF2_LCF_1951_1970.nc 5.nc
+cdo -sellevel,5 SF2_LCF_1951_1970.nc 6.nc
+cdo -sellevel,6 SF2_LCF_1951_1970.nc 7.nc
+cdo -sellevel,7 SF2_LCF_1951_1970.nc 8.nc
+cdo -sellevel,8 SF2_LCF_1951_1970.nc 9.nc
+cdo -sellevel,9 SF2_LCF_1951_1970.nc 10.nc
+cdo -sellevel,10 SF2_LCF_1951_1970.nc 11.nc
+cdo -div 2.nc sum.nc pft2.nc
+cdo -div 3.nc sum.nc pft3.nc
+cdo -div 4.nc sum.nc pft4.nc
+cdo -div 5.nc sum.nc pft5.nc
+cdo -div 6.nc sum.nc pft6.nc
+cdo -div 7.nc sum.nc pft7.nc
+cdo -div 8.nc sum.nc pft8.nc
+cdo -div 9.nc sum.nc pft9.nc
+cdo -div 10.nc sum.nc pft10.nc
+cdo -div 11.nc sum.nc pft11.nc
+
+
+cdo -L -merge -setlevel,1 pft2.nc -setlevel,2 pft3.nc -setlevel,3 pft4.nc -setlevel,4 pft5.nc -setlevel,5 pft6.nc -setlevel,6 pft7.nc -setlevel,7 pft8.nc -setlevel,8 pft9.nc -setlevel,9 pft10.nc -setlevel,10 pft11.nc ORCHIDEE_LCF_1951_1970_normalised.nc
+cdo vertsum ORCHIDEE_LCF_1951_1970_normalised.nc nsum.nc
+rm pft*.nc 1.nc 2.nc 3.nc 4.nc 5.nc 6.nc 7.nc 8.nc 9.nc 10.nc 11.nc 12.nc nsum.nc sum1.nc
+
+cdo sellevel,2/11 ORCHIDEE_LGM_LCF.nc S_LCF.nc
+
+cdo sub S_LCF.nc ORCHIDEE_LCF_1951_1970_normalised.nc ORCHIDEE_LCF_diff_normalised.nc 
+rm S_LCF.nc
+
+
+###veg cover 
+cdo -vertsum -sellevel,2/9 ORCHIDEE_LCF_diff_normalised.nc T.nc
+cdo chname,pft,Treesfrac T.nc Trees.nc
+cdo vertsum -sellevel,10/11 ORCHIDEE_LCF_diff_normalised.nc G.nc
+cdo chname,pft,Grassfrac G.nc Grass.nc
+cdo vertsum -sellevel,2/11 ORCHIDEE_LCF_diff_normalised.nc Tv.nc
+cdo chname,pft,Totvegfrac Tv.nc Totveg.nc
+
+cdo -L -merge Totveg.nc Grass.nc Trees.nc ORCHIDEEveg_type_diff_normalised.nc
+rm Trees.nc Grass.nc Totveg.nc T.nc G.nc Tv.nc
+################################LPJLM################################
+########################################################################
+
+cd /Users/paullincoln/Dropbox/2022/Research/LGM paper\ &\ new\ code/Biomes/LPJLM/ #doesn\t work but this is where the file is
+
+
+cdo vertsum LPJLM_LCF_1951_1970.nc sum.nc
+
+cdo -sellevel,1 LPJLM_LCF_1951_1970.nc 1.nc
+cdo -div 1.nc sum.nc pft1.nc
+cdo -sellevel,2 LPJLM_LCF_1951_1970.nc 2.nc
+cdo -div 2.nc sum.nc pft2.nc
+cdo -sellevel,3 LPJLM_LCF_1951_1970.nc 3.nc
+cdo -div 3.nc sum.nc pft3.nc
+cdo -sellevel,4 LPJLM_LCF_1951_1970.nc 4.nc
+cdo -div 4.nc sum.nc pft4.nc
+cdo -sellevel,5 LPJLM_LCF_1951_1970.nc 5.nc
+cdo -div 5.nc sum.nc pft5.nc
+cdo -sellevel,6 LPJLM_LCF_1951_1970.nc 6.nc
+cdo -div 6.nc sum.nc pft6.nc
+cdo -sellevel,7 LPJLM_LCF_1951_1970.nc 7.nc
+cdo -div 7.nc sum.nc pft7.nc
+cdo -sellevel,8 LPJLM_LCF_1951_1970.nc 8.nc
+cdo -div 8.nc sum.nc pft8.nc
+cdo -sellevel,9 LPJLM_LCF_1951_1970.nc 9.nc
+cdo -div 9.nc sum.nc pft9.nc
+
+
+cdo -L -merge -setlevel,1 pft1.nc -setlevel,2 pft2.nc -setlevel,3 pft3.nc -setlevel,4 pft4.nc -setlevel,5 pft5.nc -setlevel,6 pft6.nc -setlevel,7 pft7.nc -setlevel,8 pft8.nc -setlevel,9 pft9.nc LPJLM_LCF_1951_1970_normalised.nc
+cdo vertsum LPJLM_LCF_1951_1970_normalised.nc nsum.nc
+rm pft*.nc 1.nc 2.nc 3.nc 4.nc 5.nc 6.nc 7.nc 8.nc 9.nc 10.nc 11.nc 12.nc nsum.nc
+
+
+
+
+
