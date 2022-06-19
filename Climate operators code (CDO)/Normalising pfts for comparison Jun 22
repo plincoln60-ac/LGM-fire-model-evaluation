@@ -134,16 +134,17 @@ rm Trees.nc Grass.nc Totveg.nc T.nc G.nc Tv.nc
 
 cd /Users/paullincoln/Dropbox/2022/Research/LGM paper\ &\ new\ code/Biomes/ORCHIDEE/ #doesn\t work but this is where the file is
 cdo -vertsum -sellevel,2/11 SF2_LCF_1951_1970.nc sum.nc
-cdo -sellevel,1 SF2_LCF_1951_1970.nc 2.nc
-cdo -sellevel,2 SF2_LCF_1951_1970.nc 3.nc
-cdo -sellevel,3 SF2_LCF_1951_1970.nc 4.nc
-cdo -sellevel,4 SF2_LCF_1951_1970.nc 5.nc
-cdo -sellevel,5 SF2_LCF_1951_1970.nc 6.nc
-cdo -sellevel,6 SF2_LCF_1951_1970.nc 7.nc
-cdo -sellevel,7 SF2_LCF_1951_1970.nc 8.nc
-cdo -sellevel,8 SF2_LCF_1951_1970.nc 9.nc
-cdo -sellevel,9 SF2_LCF_1951_1970.nc 10.nc
-cdo -sellevel,10 SF2_LCF_1951_1970.nc 11.nc
+cdo -sellevel,1 SF2_LCF_1951_1970.nc 1.nc
+cdo -sellevel,2 SF2_LCF_1951_1970.nc 2.nc
+cdo -sellevel,3 SF2_LCF_1951_1970.nc 3.nc
+cdo -sellevel,4 SF2_LCF_1951_1970.nc 4.nc
+cdo -sellevel,5 SF2_LCF_1951_1970.nc 5.nc
+cdo -sellevel,6 SF2_LCF_1951_1970.nc 6.nc
+cdo -sellevel,7 SF2_LCF_1951_1970.nc 7.nc
+cdo -sellevel,8 SF2_LCF_1951_1970.nc 8.nc
+cdo -sellevel,9 SF2_LCF_1951_1970.nc 9.nc
+cdo -sellevel,10 SF2_LCF_1951_1970.nc 10.nc
+cdo -sellevel,11 SF2_LCF_1951_1970.nc 11.nc
 cdo -div 2.nc sum.nc pft2.nc
 cdo -div 3.nc sum.nc pft3.nc
 cdo -div 4.nc sum.nc pft4.nc
@@ -160,9 +161,9 @@ cdo -L -merge -setlevel,1 pft2.nc -setlevel,2 pft3.nc -setlevel,3 pft4.nc -setle
 cdo vertsum ORCHIDEE_LCF_1951_1970_normalised.nc nsum.nc
 rm pft*.nc 1.nc 2.nc 3.nc 4.nc 5.nc 6.nc 7.nc 8.nc 9.nc 10.nc 11.nc 12.nc nsum.nc sum1.nc
 
-cdo sellevel,2/11 ORCHIDEE_LGM_LCF.nc S_LCF.nc
+cdo sellevel,2/11 ORCHIDEE_LGM_LCF.nc ORCHIDEE_LGM_LCF_matching_var.nc
 
-cdo sub S_LCF.nc ORCHIDEE_LCF_1951_1970_normalised.nc ORCHIDEE_LCF_diff_normalised.nc 
+cdo sub ORCHIDEE_LGM_LCF_matching_var.nc ORCHIDEE_LCF_1951_1970_normalised.nc ORCHIDEE_LCF_diff_normalised.nc 
 rm S_LCF.nc
 
 

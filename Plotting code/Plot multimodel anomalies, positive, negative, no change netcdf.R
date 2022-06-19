@@ -81,7 +81,7 @@ all_BA <- all_BA %>%
   )) %>%
   dplyr::ungroup() # Removes the 'rowwise' property from the table
 BA_agreement <- all_BA[, c(1:2, 10)]
-
+write.csv(all_BA, '/Users/paullincoln/Dropbox/2022/Publications/LGM paper/Model data/Model_agreement_data.csv')
 ######## Plot output ----
 #LGM ice raster file
 p <- raster('/Volumes/PL SSD/Shapefiles/LGM mask/LGM mask2.tif')
